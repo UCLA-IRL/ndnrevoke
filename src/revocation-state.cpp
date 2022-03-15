@@ -7,8 +7,8 @@ namespace state {
 
 State::State(Certificate& certToRevoke, ndn::KeyChain& keyChain, tlv::ReasonCode reasonCode)
   : m_certToRevoke(certToRevoke)
-  , m_keyChain(keyChain)
   , m_revocationReason(reasonCode)
+  , m_keyChain(keyChain)
 {
   auto buf = Sha256::computeDigest(m_certToRevoke.getPublicKey());
   m_publicKeyHash.assign(buf->begin(), buf->end());
