@@ -1,0 +1,64 @@
+#ifndef NDNREVOKE_REVOCATION_COMMON_HPP
+#define NDNREVOKE_REVOCATION_COMMON_HPP
+
+#include <cstddef>
+#include <cstdint>
+#include <string>
+#include <tuple>
+
+#include <ndn-cxx/data.hpp>
+#include <ndn-cxx/encoding/block.hpp>
+#include <ndn-cxx/encoding/block-helpers.hpp>
+#include <ndn-cxx/interest.hpp>
+#include <ndn-cxx/name.hpp>
+#include <ndn-cxx/security/certificate.hpp>
+#include <ndn-cxx/util/exception.hpp>
+#include <ndn-cxx/util/logger.hpp>
+#include <ndn-cxx/util/optional.hpp>
+#include <ndn-cxx/util/sha256.hpp>
+#include <ndn-cxx/util/time.hpp>
+
+#include <boost/algorithm/string.hpp>
+#include <boost/assert.hpp>
+#include <boost/noncopyable.hpp>
+#include <boost/property_tree/ptree.hpp>
+
+namespace ndnrevoke {
+
+using ndn::Block;
+using ndn::Buffer;
+using ndn::Data;
+using ndn::Interest;
+using ndn::Name;
+using ndn::SignatureInfo;
+using ndn::security::Certificate;
+using ndn::util::Sha256;
+
+using ndn::optional;
+using ndn::nullopt;
+
+namespace time = ndn::time;
+using namespace ndn::time_literals;
+using namespace std::string_literals;
+
+namespace tlv {
+
+enum : uint32_t {
+  RevocationTimestamp = 201,
+  PublicKeyHash = 202,
+  RevocationReason = 203
+};
+
+// Revocation Reason
+enum class ReasonCode : uint64_t {
+  UNSPECIFIED = 0,
+  KEY_COMPROMISE = 1,
+  CA_COMPROMISE = 2,
+
+  SUPERSEDED = 4
+};
+
+} // namespace tlv
+} // namespace ndnrevoke
+
+#endif // NDNREVOKE_REVOCATION_COMMON_HPP

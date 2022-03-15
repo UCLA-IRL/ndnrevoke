@@ -1,0 +1,10 @@
+prefix=@PREFIX@
+libdir=@LIBDIR@
+includedir=@INCLUDEDIR@
+
+Name: libndn-revoke
+Description: ndnrevoke library
+Version: @VERSION@
+Libs: -L${libdir} -lndn-revoke
+Cflags: -I${includedir}
+Requires: libndn-cxx >= 0.7.1
