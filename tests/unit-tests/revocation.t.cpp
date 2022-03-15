@@ -17,8 +17,8 @@ BOOST_AUTO_TEST_CASE(RecordFormat)
   state::State genState(cert, m_keyChain);
   auto newRecord = genState.genIssuerRecord(key.getName());
   
-  ndn::printHex(std::cout, genState.m_publicKeyHash);
-  std::cout << std::endl << *newRecord << std::endl;
+  // ndn::printHex(std::cout, genState.m_publicKeyHash);
+  // std::cout << std::endl << *newRecord << std::endl;
 
   auto newRecordBlock = newRecord->wireEncode();
   newRecordBlock.parse();
@@ -26,8 +26,8 @@ BOOST_AUTO_TEST_CASE(RecordFormat)
   state::State getState(cert, m_keyChain);
   getState.getRecord(getRecord);
 
-  ndn::printHex(std::cout, getState.m_publicKeyHash);
-  std::cout << std::endl << getRecord << std::endl;
+  // ndn::printHex(std::cout, getState.m_publicKeyHash);
+  // std::cout << std::endl << getRecord << std::endl;
 
   BOOST_CHECK_EQUAL(std::memcmp(genState.m_publicKeyHash.data(), getState.m_publicKeyHash.data(), genState.m_publicKeyHash.size()), 0);
 }
