@@ -17,10 +17,8 @@ BOOST_AUTO_TEST_CASE(RevocationStateOperations)
   auto cert1 = key1.getDefaultCertificate();
 
   // add operation
-  StateId stateId = {{101}};
   RevocationState state1;
   state1.rkPrefix = Name("/ndn/rk1");
-  state1.stateId = stateId;
   state1.status = RevocationStatus::VALID_CERTIFICATE;
   state1.certName = cert1.getName();
   state1.publisherId = Name::Component("self");
@@ -31,7 +29,7 @@ BOOST_AUTO_TEST_CASE(RevocationStateOperations)
   BOOST_CHECK_NO_THROW(storage.addRevocationState(state1));
 
   // get operation
-  auto result = storage.getRevocationState(stateId);
+  auto result = storage.getRevocationState(cert1.getName());
   BOOST_CHECK_EQUAL(state1.certName, result.certName);
   BOOST_CHECK(state1.status == result.status);
   BOOST_CHECK_EQUAL(state1.rkPrefix, result.rkPrefix);
@@ -41,8 +39,6 @@ BOOST_AUTO_TEST_CASE(RevocationStateOperations)
   // update operation
   RevocationState state2;
   state2.rkPrefix = Name("/ndn/rk1");
-  state2.stateId = stateId;
-
   state2.status = RevocationStatus::REVOKED_CERTIFICATE;
   state2.certName = cert1.getName();
   state2.publisherId = Name::Component("self");
@@ -50,7 +46,7 @@ BOOST_AUTO_TEST_CASE(RevocationStateOperations)
   state2.publicKeyHash.assign(buf->begin(), buf->end());
 
   storage.updateRevocationState(state2);
-  result = storage.getRevocationState(stateId);
+  result = storage.getRevocationState(cert1.getName());
   BOOST_CHECK(state2.status == result.status);
   BOOST_CHECK_EQUAL(state2.rkPrefix, result.rkPrefix);
 
@@ -58,10 +54,8 @@ BOOST_AUTO_TEST_CASE(RevocationStateOperations)
   auto identity2 = addIdentity(Name("/ndn/site2"));
   auto key2 = identity2.getDefaultKey();
   auto cert2 = key2.getDefaultCertificate();
-  StateId stateId2 = {{102}};
   RevocationState state3;
   state3.rkPrefix = Name("/ndn/rk2");
-  state3.stateId = stateId2;
   state3.status = RevocationStatus::REVOKED_CERTIFICATE;
   state3.certName = cert2.getName();
   state3.publisherId = Name::Component("self");
@@ -74,7 +68,7 @@ BOOST_AUTO_TEST_CASE(RevocationStateOperations)
   auto allStates = storage.listAllRevocationStates();
   BOOST_CHECK_EQUAL(allStates.size(), 2);
 
-  storage.deleteRevocationState(stateId2);
+  storage.deleteRevocationState(cert1.getName());
   allStates = storage.listAllRevocationStates();
   BOOST_CHECK_EQUAL(allStates.size(), 1);
 }

@@ -13,7 +13,7 @@ public: // state related
    * @throw if RevocationState cannot be fetched from underlying data storage
    */
   virtual RevocationState
-  getRevocationState(const StateId& stateId) = 0;
+  getRevocationState(const Name& certName) = 0;
 
   /**
    * @throw if there is an existing RevocationState with the same State ID
@@ -25,7 +25,7 @@ public: // state related
   updateRevocationState(const RevocationState& state) = 0;
 
   virtual void
-  deleteRevocationState(const StateId& stateId) = 0;
+  deleteRevocationState(const Name& certName) = 0;
 
   virtual std::list<RevocationState>
   listAllRevocationStates() = 0;

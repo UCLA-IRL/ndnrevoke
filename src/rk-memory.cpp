@@ -12,11 +12,11 @@ RkMemory::RkMemory(const Name& rkName, const std::string& path)
 }
 
 RevocationState
-RkMemory::getRevocationState(const StateId& stateId)
+RkMemory::getRevocationState(const Name& certName)
 {
-  auto search = m_revocationStates.find(stateId);
+  auto search = m_revocationStates.find(certName.toUri());
   if (search == m_revocationStates.end()) {
-    NDN_THROW(std::runtime_error("Revocation State " + ndn::toHex(stateId.data(), stateId.size()) +
+    NDN_THROW(std::runtime_error("Revocation State for " + certName.toUri() +
                                  " does not exists"));
   }
   return search->second;
@@ -25,12 +25,12 @@ RkMemory::getRevocationState(const StateId& stateId)
 void
 RkMemory::addRevocationState(const RevocationState& state)
 {
-  auto search = m_revocationStates.find(state.stateId);
+  auto search = m_revocationStates.find(state.certName.toUri());
   if (search == m_revocationStates.end()) {
-    m_revocationStates.insert(std::make_pair(state.stateId, state));
+    m_revocationStates.insert(std::make_pair(state.certName.toUri(), state));
   }
   else {
-    NDN_THROW(std::runtime_error("Revoation State " + ndn::toHex(state.stateId.data(), state.stateId.size()) +
+    NDN_THROW(std::runtime_error("Revoation State " + state.certName.toUri() +
                                  " already exists"));
   }
 }
@@ -38,9 +38,9 @@ RkMemory::addRevocationState(const RevocationState& state)
 void
 RkMemory::updateRevocationState(const RevocationState& state)
 {
-  auto search = m_revocationStates.find(state.stateId);
+  auto search = m_revocationStates.find(state.certName.toUri());
   if (search == m_revocationStates.end()) {
-    m_revocationStates.insert(std::make_pair(state.stateId, state));
+    m_revocationStates.insert(std::make_pair(state.certName.toUri(), state));
   }
   else {
     search->second = state;
@@ -48,9 +48,9 @@ RkMemory::updateRevocationState(const RevocationState& state)
 }
 
 void
-RkMemory::deleteRevocationState(const StateId& stateId)
+RkMemory::deleteRevocationState(const Name& certName)
 {
-  auto search = m_revocationStates.find(stateId);
+  auto search = m_revocationStates.find(certName.toUri());
   if (search != m_revocationStates.end()) {
     m_revocationStates.erase(search);
   }

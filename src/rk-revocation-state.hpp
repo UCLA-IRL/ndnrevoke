@@ -2,12 +2,11 @@
 #define NDNREVOKE_RK_REVOCATION_STATE_HPP
 
 #include "revocation-common.hpp"
+#include "record.hpp"
 
 #include <array>
 
 namespace ndnrevoke {
-
-typedef std::array<uint8_t, 8> StateId;
 
 // RevocationStatus in RevocationKeeper
 enum class RevocationStatus : uint64_t {
@@ -40,13 +39,13 @@ namespace rk {
 struct RevocationState
 {
   /**
+   * @brief The certificate name regarding the revocation.
+   */
+  Name certName; // used as primary key (when needed)
+  /**
    * @brief The RK that the state is under.
    */
   Name rkPrefix;
-  /**
-   * @brief The ID of the state.
-   */
-  StateId stateId;
   /**
    * @brief The type of the state.
    */
@@ -55,10 +54,6 @@ struct RevocationState
    * @brief The reason of revocation.
    */
   tlv::ReasonCode reasonCode = tlv::ReasonCode::INVALID;
-  /**
-   * @brief The certificate name regarding the revocation.
-   */
-  Name certName;
   /**
    * @brief The publisher id regarding the revocation (if any).
    */
@@ -71,6 +66,9 @@ struct RevocationState
    * @brief The last Initialization Vector used by the other side's AES encryption.
    */
   uint64_t revocationTimestamp;
+
+  // should have a revocation record if the certificate is revoked
+  record::Record record;
 };
 
 std::ostream&

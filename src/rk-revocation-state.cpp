@@ -34,11 +34,10 @@ namespace rk {
 std::ostream&
 operator<<(std::ostream& os, const RevocationState& state)
 {
+  os << "State's Corresponding Certificate Name: " << state.certName << "\n";
   os << "State's Record Keeper name: " << state.rkPrefix << "\n";
-  os << "State's state ID: " << ndn::toHex(state.stateId.data(), state.stateId.size()) << "\n";
   os << "State's RevocationStatus: " << statusToString(state.status) << "\n";
   os << "State's (Revocation) ReasonCode: " << static_cast<uint64_t>(state.reasonCode) << "\n";
-  os << "State's Corresponding Certificate Name: " << state.certName << "\n";
   if (!state.publisherId.empty()) {
     os << "State's Corresponding Publisher ID: " << state.publisherId << "\n";
   }

@@ -17,7 +17,7 @@ public:
    * @throw if request cannot be fetched from underlying data storage
    */
   RevocationState
-  getRevocationState(const StateId& stateId) override;
+  getRevocationState(const Name& certName) override;
 
   /**
    * @throw if there is an existing RevocationState with the same State ID
@@ -29,7 +29,7 @@ public:
   updateRevocationState(const RevocationState& state) override;
 
   void
-  deleteRevocationState(const StateId& stateId) override;
+  deleteRevocationState(const Name& certName) override;
 
   std::list<RevocationState>
   listAllRevocationStates() override;
@@ -38,7 +38,7 @@ public:
   listAllRevocationStates(const Name& rkName) override;
 
 private:
-  std::map<StateId, RevocationState> m_revocationStates;
+  std::map<std::string, RevocationState> m_revocationStates;
 };
 
 } // namespace rk
