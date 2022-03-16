@@ -56,7 +56,8 @@ enum class ReasonCode : uint64_t {
   KEY_COMPROMISE = 1,
   CA_COMPROMISE = 2,
 
-  SUPERSEDED = 4
+  SUPERSEDED = 4,
+  INVALID = 99,
 };
 
 // Nack Reason
