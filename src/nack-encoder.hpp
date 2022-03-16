@@ -2,7 +2,7 @@
 #define NDNREVOKE_NACK_ENCODER_HPP
 
 #include "revocation-common.hpp"
-#include "revocation-state.hpp"
+#include "state.hpp"
 #include <ndn-cxx/security/key-chain.hpp>
 
 namespace ndnrevoke {

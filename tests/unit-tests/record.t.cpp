@@ -1,6 +1,6 @@
 #include "record.hpp"
 #include "record-encoder.hpp"
-#include "revocation-state.hpp"
+#include "state.hpp"
 #include "test-common.hpp"
 
 namespace ndnrevoke {
