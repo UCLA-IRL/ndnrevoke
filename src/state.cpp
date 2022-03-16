@@ -24,7 +24,7 @@ State::State(Name& certName, ndn::KeyChain& keyChain)
 }
 
 std::shared_ptr<record::Record>
-State::genIssuerRecord(const Name& signingKeyName)
+State::genIssuerRecord(const Name& signingKeyName, ndn::time::milliseconds freshnessPeriod)
 {
   auto recordName = m_certName;
   recordName.set(m_certData.value().getIdentity().size(), Name::Component("REVOKE"));
@@ -33,7 +33,7 @@ State::genIssuerRecord(const Name& signingKeyName)
   
   std::shared_ptr<record::Record> record = std::make_shared<record::Record>();
   record->setName(recordName);
-  record->setFreshnessPeriod(10_h);
+  record->setFreshnessPeriod(freshnessPeriod);
 
   BOOST_ASSERT(m_revocationReason.has_value());
   record->setContent(recordtlv::encodeRecordContent(m_publicKeyHash, m_revocationReason.value()));
@@ -42,7 +42,7 @@ State::genIssuerRecord(const Name& signingKeyName)
 }
 
 std::shared_ptr<record::Record>
-State::genOwnerRecord(const Name& signingKeyName)
+State::genOwnerRecord(const Name& signingKeyName, ndn::time::milliseconds freshnessPeriod)
 {
   auto recordName = m_certName;
   recordName.set(m_certData.value().getIdentity().size(), Name::Component("REVOKE"));
@@ -51,7 +51,7 @@ State::genOwnerRecord(const Name& signingKeyName)
   
   std::shared_ptr<record::Record> record = std::make_shared<record::Record>();
   record->setName(recordName);
-  record->setFreshnessPeriod(10_h);
+  record->setFreshnessPeriod(freshnessPeriod);
   BOOST_ASSERT(m_revocationReason.has_value());
   record->setContent(recordtlv::encodeRecordContent(m_publicKeyHash, m_revocationReason.value()));
   m_keyChain.sign(*record, signingByKey(signingKeyName));
@@ -68,7 +68,7 @@ State::getRecord(const record::Record& record)
 }
 
 std::shared_ptr<nack::Nack>
-State::genNack(const Name& signingKeyName)
+State::genNack(const Name& signingKeyName, ndn::time::milliseconds freshnessPeriod)
 {
   auto nackName = m_certName;
   BOOST_ASSERT(m_publisher.has_value());
@@ -77,7 +77,7 @@ State::genNack(const Name& signingKeyName)
   
   std::shared_ptr<nack::Nack> nack = std::make_shared<nack::Nack>();
   nack->setName(nackName);
-  nack->setFreshnessPeriod(10_h);
+  nack->setFreshnessPeriod(freshnessPeriod);
 
   BOOST_ASSERT(m_nackCode.has_value());
   nack->setContent(nacktlv::encodeNackContent(m_nackCode.value()));

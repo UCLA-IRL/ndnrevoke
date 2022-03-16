@@ -20,21 +20,32 @@ public:
   State(Name& certName, ndn::KeyChain& keyChain);
 
   std::shared_ptr<record::Record>
-  genIssuerRecord(const Name& signingKeyName);
+  genIssuerRecord(const Name& signingKeyName, ndn::time::milliseconds freshnessPeriod = 100_h);
 
   std::shared_ptr<record::Record>
-  genOwnerRecord(const Name& signingKeyName);
+  genOwnerRecord(const Name& signingKeyName, ndn::time::milliseconds freshnessPeriod = 100_h);
 
   void
   getRecord(const record::Record& record);
 
   std::shared_ptr<nack::Nack>
-  genNack(const Name& signingKeyName);
+  genNack(const Name& signingKeyName, ndn::time::milliseconds freshnessPeriod = 10_h);
 
   void
   getNack(const nack::Nack& nack);
 
   // util
+  bool
+  isRevoked()
+  {
+    if (m_revocationReason.has_value() && 
+        m_revocationReason.value() != tlv::ReasonCode::INVALID)
+    {
+      return true;
+    }
+    return false;
+  }
+  
   void
   setCertificateData(Certificate& certData)
   {
