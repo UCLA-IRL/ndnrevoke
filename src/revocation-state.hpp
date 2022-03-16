@@ -1,8 +1,10 @@
 #ifndef NDNREVOKE_REVOCATION_STATE_HPP
 #define NDNREVOKE_REVOCATION_STATE_HPP
 
+#include <optional>
 #include "revocation-common.hpp"
 #include "record.hpp"
+#include "nack.hpp"
 #include <ndn-cxx/security/key-chain.hpp>
 
 namespace ndnrevoke {
@@ -12,7 +14,10 @@ class State : boost::noncopyable
 {
 public:
   explicit
-  State(Certificate& certToRevoke, ndn::KeyChain& keyChain, tlv::ReasonCode reasonCode = tlv::ReasonCode::UNSPECIFIED);
+  State(Certificate& certData, ndn::KeyChain& keyChain);
+
+  explicit
+  State(Name& certName, ndn::KeyChain& keyChain);
 
   std::shared_ptr<record::Record>
   genIssuerRecord(const Name& signingKeyName);
@@ -22,13 +27,53 @@ public:
 
   void
   getRecord(const record::Record& record);
-  
+
+  std::shared_ptr<nack::Nack>
+  genNack(const Name& signingKeyName);
+
+  void
+  getNack(const nack::Nack& nack);
+
+  // util
+  void
+  setCertificateData(Certificate& certData)
+  {
+    m_certData = certData;
+    auto buf = Sha256::computeDigest(m_certData.value().getPublicKey());
+    m_publicKeyHash.assign(buf->begin(), buf->end());
+  }
+
+  void
+  setPublisher(Name::Component publisher)
+  {
+    m_publisher = publisher;
+  }
+
+  void
+  setRevocationReason(tlv::ReasonCode reasonCode)
+  {
+    m_revocationReason = reasonCode;
+  }
+
+  void
+  setNackCode(tlv::NackCode nackCode)
+  {
+    m_nackCode = nackCode;
+  }
+
 public:
-  Certificate m_certToRevoke;
+  Name m_certName;
   std::vector<uint8_t> m_publicKeyHash;
-  uint64_t m_revocationTimestamp;
-  tlv::ReasonCode m_revocationReason;
-  Name::Component m_publisher;
+  
+  // helper
+  optional<Certificate> m_certData;
+
+  // if revoked
+  optional<uint64_t> m_revocationTimestamp;
+  optional<tlv::ReasonCode> m_revocationReason;
+  optional<Name::Component> m_publisher;
+  // if not revoked
+  optional<tlv::NackCode> m_nackCode;
 private:
   ndn::KeyChain& m_keyChain;
 };

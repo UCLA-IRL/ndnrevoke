@@ -6,7 +6,7 @@
 namespace ndnrevoke {
 namespace tests {
 
-BOOST_FIXTURE_TEST_SUITE(TestRevocationRecord, IdentityManagementFixture)
+BOOST_FIXTURE_TEST_SUITE(TestRecord, IdentityManagementFixture)
 
 BOOST_AUTO_TEST_CASE(RecordFormat)
 {
@@ -15,8 +15,9 @@ BOOST_AUTO_TEST_CASE(RecordFormat)
   auto cert = key.getDefaultCertificate();
   
   state::State genState(cert, m_keyChain);
+  genState.setRevocationReason(tlv::ReasonCode::SUPERSEDED);
   auto newRecord = genState.genIssuerRecord(key.getName());
-  
+
   // ndn::printHex(std::cout, genState.m_publicKeyHash);
   // std::cout << std::endl << *newRecord << std::endl;
 

@@ -46,7 +46,8 @@ namespace tlv {
 enum : uint32_t {
   RevocationTimestamp = 201,
   PublicKeyHash = 202,
-  RevocationReason = 203
+  RevocationReason = 203,
+  NackReason = 204
 };
 
 // Revocation Reason
@@ -56,6 +57,11 @@ enum class ReasonCode : uint64_t {
   CA_COMPROMISE = 2,
 
   SUPERSEDED = 4
+};
+
+// Nack Reason
+enum class NackCode : uint64_t {
+  NOT_REVOKED = 0
 };
 
 } // namespace tlv

@@ -1,4 +1,5 @@
 #include "record-encoder.hpp"
+#include <iostream>
 
 namespace ndnrevoke {
 
@@ -16,10 +17,12 @@ recordtlv::encodeRecordContent(const std::vector<uint8_t>& publicKeyHash, const 
 void
 recordtlv::decodeRecordContent(const Block& recordContent, state::State& state)
 {
+  recordContent.parse();
   for (const auto &item : recordContent.elements()) {
     switch (item.type()) {
       case tlv::PublicKeyHash:
-        state.m_publicKeyHash.assign(recordContent.get(tlv::PublicKeyHash).begin(), recordContent.get(tlv::PublicKeyHash).end());
+        state.m_publicKeyHash.resize(item.value_size());
+        std::memcpy(state.m_publicKeyHash.data(), item.value(), item.value_size());
         break;
       case tlv::RevocationTimestamp:
         state.m_revocationTimestamp = readNonNegativeInteger(item);

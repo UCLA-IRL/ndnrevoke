@@ -1,8 +1,10 @@
 #include "record.hpp"
-#include <ndn-cxx/security/signing-helpers.hpp>
 
 namespace ndnrevoke {
 namespace record {
+
+const ssize_t Record::PUBLISHER_OFFSET = -1;
+const ssize_t Record::REVOKE_OFFSET = -5;
 
 Record::Record()
 {

@@ -21,9 +21,13 @@ public:
 
   explicit
   Record(const Data& data);
+  
+  // /<prefix>/REVOKE/<keyid>/<issuer>/<version>/<publisher>
+  static const ssize_t PUBLISHER_OFFSET;
+  static const ssize_t REVOKE_OFFSET;
 };
 
 } // namespace record
 } // namespace ndncert
 
-#endif // NDNREVOKE_REVOCATION_RECORD_HPP
+#endif // NDNREVOKE_RECORD_HPP
