@@ -20,7 +20,7 @@ public:
   getRevocationState(const Name& certName) override;
 
   /**
-   * @throw if there is an existing RevocationState with the same State ID
+   * @throw if there is an existing RevocationState with the same certName
    */
   void
   addRevocationState(const RevocationState& state) override;
