@@ -41,6 +41,8 @@ namespace time = ndn::time;
 using namespace ndn::time_literals;
 using namespace std::string_literals;
 
+using JsonSection = boost::property_tree::ptree;
+
 namespace tlv {
 
 enum : uint32_t {

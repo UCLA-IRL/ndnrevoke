@@ -16,12 +16,13 @@ NDN_LOG_INIT(ndncert.rk);
 
 
 // TODO: need config record Zone
-RkModule::RkModule(ndn::Face& face, ndn::KeyChain& keyChain, Name& rkPrefix, const std::string& storageType)
+RkModule::RkModule(ndn::Face& face, ndn::KeyChain& keyChain, const std::string& configPath, const std::string& storageType)
   : m_face(face)
-  , m_rkPrefix(rkPrefix)
   , m_keyChain(keyChain)
 {
-  m_storage = RkStorage::createRkStorage(storageType, rkPrefix, "");
+  // load the config and create storage
+  m_config.load(configPath);
+  m_storage = RkStorage::createRkStorage(storageType, m_config.rkPrefix, "");
   registerPrefix();
 }
 
@@ -39,7 +40,7 @@ void
 RkModule::registerPrefix()
 {
   // register prefixes
-  Name prefix = m_rkPrefix;
+  Name prefix = m_config.rkPrefix;
   // in practice, it should be a ledger, but let's denote
   // as a Record Keeper here
   prefix.append("RK");
@@ -49,7 +50,7 @@ RkModule::registerPrefix()
     [&] (const Name& name) {
       // register for each record Zone
       // notice: this only register FIB to Face, not NFD.
-      for (auto& zone : m_recordZone) {
+      for (auto& zone : m_config.recordZones) {
          auto filterId = m_face.setInterestFilter(zone, [this] (auto&&, const auto& i) { onQuery(i); });
         m_interestFilterHandles.push_back(filterId);
       }
@@ -120,7 +121,7 @@ RkModule::getNack(const RevocationState& revocationState)
 
   // need try-catch in case of not having keys
   const auto& pib = m_keyChain.getPib();
-  const auto& identity = pib.getIdentity(m_rkPrefix);
+  const auto& identity = pib.getIdentity(m_config.rkPrefix);
   
   // need to customize freshness period later
   return state.genNack(identity.getDefaultKey().getName(), 1_h);

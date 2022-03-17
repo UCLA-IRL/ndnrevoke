@@ -2,6 +2,7 @@
 #define NDNREVOKE_RK_MODULE_HPP
 
 #include "rk-storage.hpp"
+#include "rk-configuration.hpp"
 #include "nack.hpp"
 
 #include <ndn-cxx/face.hpp>
@@ -13,7 +14,7 @@ namespace rk {
 class RkModule : boost::noncopyable
 {
 public:
-  RkModule(ndn::Face& face, ndn::KeyChain& keyChain, Name& rkPrefix,
+  RkModule(ndn::Face& face, ndn::KeyChain& keyChain, const std::string& configPath,
            const std::string& storageType = "ca-storage-memory");
 
   ~RkModule();
@@ -42,11 +43,7 @@ private:
   onRegisterFailed(const std::string& reason);
 
   ndn::Face& m_face;
-  Name m_rkPrefix;
-  // operator should list the namespace(s) that this RK is responsible of.
-  // RK won't do look up for records that are that belong to any of the record Zone.
-  // no protocol side impact, purely for filtering RK side unnecessary record look up.
-  std::vector<Name> m_recordZone;
+  RkConfig m_config;
   std::unique_ptr<RkStorage> m_storage;
   ndn::KeyChain& m_keyChain;
 
