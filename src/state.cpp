@@ -7,7 +7,7 @@
 namespace ndnrevoke {
 namespace state {
 
-State::State(Certificate& certData, ndn::KeyChain& keyChain)
+State::State(const Certificate& certData, ndn::KeyChain& keyChain)
   : m_certData(certData)
   , m_keyChain(keyChain)
 {
@@ -17,7 +17,7 @@ State::State(Certificate& certData, ndn::KeyChain& keyChain)
 }
 
 // keychain may not be useful
-State::State(Name& certName, ndn::KeyChain& keyChain)
+State::State(const Name& certName, ndn::KeyChain& keyChain)
   : m_certName(certName)
   , m_keyChain(keyChain)
 {

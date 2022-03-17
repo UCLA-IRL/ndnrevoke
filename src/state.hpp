@@ -14,10 +14,10 @@ class State : boost::noncopyable
 {
 public:
   explicit
-  State(Certificate& certData, ndn::KeyChain& keyChain);
+  State(const Certificate& certData, ndn::KeyChain& keyChain);
 
   explicit
-  State(Name& certName, ndn::KeyChain& keyChain);
+  State(const Name& certName, ndn::KeyChain& keyChain);
 
   std::shared_ptr<record::Record>
   genIssuerRecord(const Name& signingKeyName, ndn::time::milliseconds freshnessPeriod = 100_h);
