@@ -1,4 +1,4 @@
-#include "rk-configuration.hpp"
+#include "ct-configuration.hpp"
 
 #include <ndn-cxx/util/io.hpp>
 
@@ -6,15 +6,15 @@
 #include <boost/property_tree/json_parser.hpp>
 
 namespace ndnrevoke {
-namespace rk {
+namespace ct {
 
-const std::string CONFIG_RK_PREFIX = "rk-prefix";
+const std::string CONFIG_CT_PREFIX = "ct-prefix";
 const std::string CONFIG_NACK_FRESHNESS_PERIOD = "nack-freshness-period";
 const std::string CONFIG_RECORD_ZONES = "record-zones";
 const std::string CONFIG_RECORD_ZONE_PREFIX = "record-zone-prefix";
 
 void
-RkConfig::load(const std::string& fileName)
+CtConfig::load(const std::string& fileName)
 {
   JsonSection configJson;
   try {
@@ -28,10 +28,10 @@ RkConfig::load(const std::string& fileName)
   }
 
 
- // RK prefix
-  rkPrefix = Name(configJson.get(CONFIG_RK_PREFIX, ""));
-  if (rkPrefix.empty()) {
-    NDN_THROW(std::runtime_error("Cannot parse rk-prefix from the config file"));
+ // Ct prefix
+  ctPrefix = Name(configJson.get(CONFIG_CT_PREFIX, ""));
+  if (ctPrefix.empty()) {
+    NDN_THROW(std::runtime_error("Cannot parse ct-prefix from the config file"));
   }
   // Nack Freshness Period
   nackFreshnessPeriod = time::seconds(configJson.get(CONFIG_NACK_FRESHNESS_PERIOD, 86400));
@@ -54,5 +54,5 @@ RkConfig::load(const std::string& fileName)
   // in fact, we also need configure trust policies, but will do later
 }
 
-} // namespace rk
+} // namespace ct
 } // namespace ndnrevoke

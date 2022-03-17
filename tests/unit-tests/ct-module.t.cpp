@@ -1,25 +1,25 @@
-#include "rk-module.hpp"
+#include "ct-module.hpp"
 #include "state.hpp"
 #include "test-common.hpp"
 
 namespace ndnrevoke {
 namespace tests {
 
-using namespace rk;
+using namespace ct;
 using ndn::util::DummyClientFace;
 using ndn::security::verifySignature;
 
-BOOST_FIXTURE_TEST_SUITE(TestRkModule, IdentityManagementTimeFixture)
+BOOST_FIXTURE_TEST_SUITE(TestCtModule, IdentityManagementTimeFixture)
 
 BOOST_AUTO_TEST_CASE(Initialization)
 {
   DummyClientFace face(io, m_keyChain, {true, true});
-  RkModule rk(face, m_keyChain, "tests/unit-tests/config-files/config-rk-1", "rk-storage-memory");
-  BOOST_CHECK_EQUAL(rk.getRkConf().rkPrefix, Name("/ndn"));
+  CtModule ct(face, m_keyChain, "tests/unit-tests/config-files/config-ct-1", "ct-storage-memory");
+  BOOST_CHECK_EQUAL(ct.getCtConf().ctPrefix, Name("/ndn"));
 
   advanceClocks(time::milliseconds(20), 60);
-  BOOST_CHECK_EQUAL(rk.m_registeredPrefixHandles.size(), 1); // removed local discovery registration
-  BOOST_CHECK_EQUAL(rk.m_interestFilterHandles.size(), 2);  // two record zones: /ndn/site1, /ndn/site2
+  BOOST_CHECK_EQUAL(ct.m_registeredPrefixHandles.size(), 1); // removed local discovery registration
+  BOOST_CHECK_EQUAL(ct.m_interestFilterHandles.size(), 2);  // two record zones: /ndn/site1, /ndn/site2
 }
 
 BOOST_AUTO_TEST_CASE(HandleQueryAndRecord)
@@ -33,7 +33,7 @@ BOOST_AUTO_TEST_CASE(HandleQueryAndRecord)
   auto cert2 = key2.getDefaultCertificate();
 
   DummyClientFace face(io, m_keyChain, {true, true});
-  RkModule rk(face, m_keyChain, "tests/unit-tests/config-files/config-rk-1", "rk-storage-memory");
+  CtModule ct(face, m_keyChain, "tests/unit-tests/config-files/config-ct-1", "ct-storage-memory");
   advanceClocks(time::milliseconds(20), 60);
 
   auto recordName = cert2.getName();
@@ -47,8 +47,8 @@ BOOST_AUTO_TEST_CASE(HandleQueryAndRecord)
   state.setPublisher(Name::Component("self"));
   auto record = state.genOwnerRecord(key2.getName(), 100_h);
 
-  auto revocationState = makeRevocationState(*record);
-  rk.m_storage->addRevocationState(*revocationState);
+  auto certState = makeCertificateState(*record);
+  ct.m_storage->addCertificateState(*certState);
   face.onSendData.connect([&](const Data& response) {
     BOOST_CHECK(verifySignature(response, cert2));
     state::State state2(cert2.getName(), m_keyChain);
@@ -70,7 +70,7 @@ BOOST_AUTO_TEST_CASE(HandleQueryAndNack)
   auto cert2 = key2.getDefaultCertificate();
 
   DummyClientFace face(io, m_keyChain, {true, true});
-  RkModule rk(face, m_keyChain, "tests/unit-tests/config-files/config-rk-1", "rk-storage-memory");
+  CtModule ct(face, m_keyChain, "tests/unit-tests/config-files/config-ct-1", "ct-storage-memory");
   advanceClocks(time::milliseconds(20), 60);
 
   auto recordName = cert2.getName();
@@ -79,8 +79,8 @@ BOOST_AUTO_TEST_CASE(HandleQueryAndNack)
   Interest interest(recordName);
   interest.setCanBePrefix(true);
 
-  auto revocationState = makeRevocationState(cert2);
-  rk.m_storage->addRevocationState(*revocationState);
+  auto certState = makeCertificateState(cert2);
+  ct.m_storage->addCertificateState(*certState);
 
   face.onSendData.connect([&](const Data& response) {
     BOOST_CHECK(verifySignature(response, cert));

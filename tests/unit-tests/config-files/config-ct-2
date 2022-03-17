@@ -1,4 +1,4 @@
 {
-  "rk-prefix": "/ndn",
+  "ct-prefix": "/ndn",
   "nack-freshness-period": "864000"
 }

@@ -26,6 +26,9 @@ State::State(const Name& certName, ndn::KeyChain& keyChain)
 std::shared_ptr<record::Record>
 State::genIssuerRecord(const Name& signingKeyName, ndn::time::milliseconds freshnessPeriod)
 {
+  if (!m_revocationReason.has_value()) {
+    return nullptr;
+  }
   auto recordName = m_certName;
   recordName.set(m_certData.value().getIdentity().size(), Name::Component("REVOKE"));
   m_publisher = Name::Component(m_certData.value().getIssuerId());
@@ -34,8 +37,6 @@ State::genIssuerRecord(const Name& signingKeyName, ndn::time::milliseconds fresh
   std::shared_ptr<record::Record> record = std::make_shared<record::Record>();
   record->setName(recordName);
   record->setFreshnessPeriod(freshnessPeriod);
-
-  BOOST_ASSERT(m_revocationReason.has_value());
   record->setContent(recordtlv::encodeRecordContent(m_publicKeyHash, m_revocationReason.value()));
   m_keyChain.sign(*record, signingByKey(signingKeyName));
   return record;
@@ -44,6 +45,9 @@ State::genIssuerRecord(const Name& signingKeyName, ndn::time::milliseconds fresh
 std::shared_ptr<record::Record>
 State::genOwnerRecord(const Name& signingKeyName, ndn::time::milliseconds freshnessPeriod)
 {
+  if (!m_revocationReason.has_value()) {
+    return nullptr;
+  }
   auto recordName = m_certName;
   recordName.set(Certificate::KEY_COMPONENT_OFFSET, Name::Component("REVOKE"));
   m_publisher = Name::Component("self");
@@ -52,7 +56,6 @@ State::genOwnerRecord(const Name& signingKeyName, ndn::time::milliseconds freshn
   std::shared_ptr<record::Record> record = std::make_shared<record::Record>();
   record->setName(recordName);
   record->setFreshnessPeriod(freshnessPeriod);
-  BOOST_ASSERT(m_revocationReason.has_value());
   record->setContent(recordtlv::encodeRecordContent(m_publicKeyHash, m_revocationReason.value()));
   m_keyChain.sign(*record, signingByKey(signingKeyName));
   return record;
@@ -70,16 +73,16 @@ State::getRecord(const record::Record& record)
 std::shared_ptr<nack::Nack>
 State::genNack(const Name& signingKeyName, ndn::time::milliseconds freshnessPeriod)
 {
+  if (!m_nackCode.has_value() || !m_publisher.has_value()) {
+    return nullptr;
+  }
   auto nackName = m_certName;
-  BOOST_ASSERT(m_publisher.has_value());
   nackName.append(m_publisher.value());
   nackName.append("nack").appendTimestamp();
   
   std::shared_ptr<nack::Nack> nack = std::make_shared<nack::Nack>();
   nack->setName(nackName);
   nack->setFreshnessPeriod(freshnessPeriod);
-
-  BOOST_ASSERT(m_nackCode.has_value());
   nack->setContent(nacktlv::encodeNackContent(m_nackCode.value()));
   m_keyChain.sign(*nack, signingByKey(signingKeyName));
   return nack;

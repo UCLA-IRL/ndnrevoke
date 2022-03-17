@@ -6,7 +6,6 @@ Block
 nacktlv::encodeNackContent(optional<tlv::NackCode> nackCode)
 {
   Block content(ndn::tlv::Content);
-  BOOST_ASSERT(nackCode.has_value());
   content.push_back(ndn::makeNonNegativeIntegerBlock(tlv::NackReason, static_cast<uint64_t>(nackCode.value())));
   return content;
 }

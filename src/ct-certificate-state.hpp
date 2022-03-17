@@ -1,5 +1,5 @@
-#ifndef NDNREVOKE_RK_REVOCATION_STATE_HPP
-#define NDNREVOKE_RK_REVOCATION_STATE_HPP
+#ifndef NDNREVOKE_CT_CERTIFICATE_STATE_HPP
+#define NDNREVOKE_CT_CERTIFICATE_STATE_HPP
 
 #include "revocation-common.hpp"
 #include "record.hpp"
@@ -9,7 +9,7 @@
 namespace ndnrevoke {
 
 // RevocationStatus in RevocationKeeper
-enum class RevocationStatus : uint64_t {
+enum class CertificateStatus : uint64_t {
   NOTINITIALIZED = 0,
   VALID_CERTIFICATE = 1,
   REVOKED_CERTIFICATE = 2
@@ -19,37 +19,35 @@ enum class RevocationStatus : uint64_t {
  * @brief Convert RevocationStatus to string.
  */
 std::string
-statusToString(RevocationStatus status);
+statusToString(CertificateStatus status);
 
 /**
  * @brief Convert RevocationStatus to string.
  */
-RevocationStatus
+CertificateStatus
 statusFromBlock(const Block& block);
 
-// Tianyuan: I name it to Record Keeper (will have a better name in future)
-// Revocation Authority is an absolutely bad name.
-namespace rk {
+namespace ct {
 
 /**
  * @brief Represents a certificate request instance kept by the CA.
  *
  * ChallengeModule should take use of RequestState.ChallengeState to keep the challenge state.
  */
-struct RevocationState
+struct CertificateState
 {
   /**
    * @brief The certificate name regarding the revocation.
    */
   Name certName; // used as primary key (when needed)
   /**
-   * @brief The RK that the state is under.
+   * @brief The CT that the state is under.
    */
-  Name rkPrefix;
+  Name ctPrefix;
   /**
    * @brief The type of the state.
    */
-  RevocationStatus status = RevocationStatus::NOTINITIALIZED;
+  CertificateStatus status = CertificateStatus::NOTINITIALIZED;
   /**
    * @brief The reason of revocation.
    */
@@ -71,16 +69,16 @@ struct RevocationState
   record::Record record;
 };
 
-std::shared_ptr<RevocationState>
-makeRevocationState(record::Record& record);
+std::shared_ptr<CertificateState>
+makeCertificateState(record::Record& record);
 
-std::shared_ptr<RevocationState>
-makeRevocationState(Certificate& cert);
+std::shared_ptr<CertificateState>
+makeCertificateState(Certificate& cert);
 
 std::ostream&
-operator<<(std::ostream& os, const RevocationState& request);
+operator<<(std::ostream& os, const CertificateState& state);
 
-} // namespace rk
+} // namespace ct
 } // namespace ndnrevoke
 
-#endif // NDNREVOKE_RK_REVOCATION_STATE_HPP
+#endif // NDNREVOKE_CT_REVOCATION_STATE_HPP
