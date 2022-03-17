@@ -71,6 +71,12 @@ struct RevocationState
   record::Record record;
 };
 
+std::shared_ptr<RevocationState>
+makeRevocationState(record::Record& record);
+
+std::shared_ptr<RevocationState>
+makeRevocationState(Certificate& cert);
+
 std::ostream&
 operator<<(std::ostream& os, const RevocationState& request);
 

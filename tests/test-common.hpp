@@ -3,6 +3,8 @@
 
 #include "boost-test.hpp"
 #include "identity-management-fixture.hpp"
+#include "unit-test-time-fixture.hpp"
+#include "identity-management-time-fixture.hpp"
 #include <ndn-cxx/security/signing-helpers.hpp>
 #include <ndn-cxx/security/transform/base64-encode.hpp>
 #include <ndn-cxx/security/transform/buffer-source.hpp>

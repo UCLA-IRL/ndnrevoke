@@ -12,7 +12,6 @@ namespace rk {
  * The format of RK configuration in JSON
  * {
  *  "rk-prefix": "",
- *  "record-freshness-period": "", (in seconds)
  *  "nack-freshness-period": "", (in seconds)
  *  "record-zones":
  *  [
@@ -33,7 +32,6 @@ public:
 
 public:
   Name rkPrefix;
-  ndn::time::milliseconds recordFreshnessPeriod;
   ndn::time::milliseconds nackFreshnessPeriod;
   // operator should list the namespace(s) that this RK is responsible of.
   // RK won't do look up for records that are that belong to any of the record Zone.

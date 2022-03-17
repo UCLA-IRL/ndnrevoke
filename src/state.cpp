@@ -45,7 +45,7 @@ std::shared_ptr<record::Record>
 State::genOwnerRecord(const Name& signingKeyName, ndn::time::milliseconds freshnessPeriod)
 {
   auto recordName = m_certName;
-  recordName.set(m_certData.value().getIdentity().size(), Name::Component("REVOKE"));
+  recordName.set(Certificate::KEY_COMPONENT_OFFSET, Name::Component("REVOKE"));
   m_publisher = Name::Component("self");
   recordName.append(m_publisher.value());
   
@@ -63,7 +63,7 @@ State::getRecord(const record::Record& record)
 {
   m_certName = record.getName();
   m_certName.set(record::Record::REVOKE_OFFSET, Name::Component("KEY"));
-  m_certName.getPrefix(record::Record::PUBLISHER_OFFSET);
+  m_certName.erase(record::Record::PUBLISHER_OFFSET);
   recordtlv::decodeRecordContent(record.getContent(), *this);
 }
 
@@ -90,7 +90,7 @@ State::getNack(const nack::Nack& nack)
 {
   m_certName = nack.getName();
   m_certName.set(nack::Nack::REVOKE_OFFSET, Name::Component("KEY"));
-  m_certName.getPrefix(nack::Nack::PUBLISHER_OFFSET);
+  m_certName.erase(nack::Nack::PUBLISHER_OFFSET);
   nacktlv::decodeNackContent(nack.getContent(), *this);
 }
 

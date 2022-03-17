@@ -23,6 +23,20 @@
 #include <boost/noncopyable.hpp>
 #include <boost/property_tree/ptree.hpp>
 
+#include "ndnrevoke-config.hpp"
+
+#ifdef NDNREVOKE_HAVE_TESTS
+#define NDNREOVKE_VIRTUAL_WITH_TESTS virtual
+#define NDNREVOKE_PUBLIC_WITH_TESTS_ELSE_PROTECTED public
+#define NDNREVOKE_PUBLIC_WITH_TESTS_ELSE_PRIVATE public
+#define NDNREVOKE_PROTECTED_WITH_TESTS_ELSE_PRIVATE protected
+#else
+#define NDNREVOKE_VIRTUAL_WITH_TESTS
+#define NDNREVOKE_PUBLIC_WITH_TESTS_ELSE_PROTECTED protected
+#define NDNREVOKE_PUBLIC_WITH_TESTS_ELSE_PRIVATE private
+#define NDNREVOKE_PROTECTED_WITH_TESTS_ELSE_PRIVATE private
+#endif
+
 namespace ndnrevoke {
 
 using ndn::Block;

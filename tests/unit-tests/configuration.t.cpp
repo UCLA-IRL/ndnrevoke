@@ -11,7 +11,6 @@ BOOST_AUTO_TEST_CASE(RkConfigFile)
   rk::RkConfig config;
   config.load("tests/unit-tests/config-files/config-rk-1");
   BOOST_CHECK_EQUAL(config.rkPrefix, "/ndn");
-  BOOST_CHECK_EQUAL(config.recordFreshnessPeriod, time::seconds(864000));
   BOOST_CHECK_EQUAL(config.nackFreshnessPeriod, time::seconds(864000));
   BOOST_CHECK_EQUAL(config.recordZones.size(), 2);
   BOOST_CHECK_EQUAL(config.recordZones.front(), Name("/ndn/site1"));

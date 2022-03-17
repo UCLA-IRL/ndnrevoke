@@ -1,6 +1,5 @@
 {
   "rk-prefix": "/ndn",
-  "record-freshness-period": "864000",
   "nack-freshness-period": "864000",
   "record-zones":
   [

@@ -1,4 +1,5 @@
 #include "rk-revocation-state.hpp"
+#include "state.hpp"
 
 #include <ndn-cxx/util/indented-stream.hpp>
 
@@ -30,6 +31,50 @@ statusFromBlock(const Block& block)
 }
 
 namespace rk {
+
+std::shared_ptr<RevocationState>
+makeRevocationState(record::Record& record)
+{
+  auto certName = record.getName();
+  certName.set(record::Record::REVOKE_OFFSET, Name::Component("KEY"));
+  certName.erase(record::Record::PUBLISHER_OFFSET);
+  ndn::KeyChain dummyKeyChain;
+  state::State state(certName, dummyKeyChain);
+  state.getRecord(record);
+  
+  auto revocationState = std::make_shared<RevocationState>();
+  revocationState->certName = certName;
+  revocationState->publicKeyHash = state.m_publicKeyHash;
+  revocationState->record = record;
+  if (state.m_revocationTimestamp.has_value()) {
+    revocationState->revocationTimestamp = state.m_revocationTimestamp.value();
+  }
+  if (state.m_revocationReason.has_value()) {
+    revocationState->reasonCode = state.m_revocationReason.value();
+  }
+  if (state.m_publisher.has_value()) {
+    revocationState->publisherId = state.m_publisher.value();
+  }
+
+  if (state.m_revocationReason.has_value() && state.m_revocationTimestamp.has_value())
+  {
+    revocationState->status = RevocationStatus::REVOKED_CERTIFICATE;
+  }
+  return revocationState;
+}
+
+std::shared_ptr<RevocationState>
+makeRevocationState(Certificate& cert)
+{
+  ndn::KeyChain dummyKeyChain;
+  state::State state(cert, dummyKeyChain);
+  
+  auto revocationState = std::make_shared<RevocationState>();
+  revocationState->certName = cert.getName();
+  revocationState->publicKeyHash = state.m_publicKeyHash;
+  revocationState->status = RevocationStatus::VALID_CERTIFICATE;
+  return revocationState;
+}
 
 std::ostream&
 operator<<(std::ostream& os, const RevocationState& state)

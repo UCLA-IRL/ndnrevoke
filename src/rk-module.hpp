@@ -25,6 +25,12 @@ public:
     return m_storage;
   }
 
+  RkConfig&
+  getRkConf()
+  {
+    return m_config;
+  }
+
   void
   onQuery(const Interest& query);
 
@@ -32,9 +38,9 @@ public:
   getRevocationState(const Name& certName);
 
 private:
-
   std::shared_ptr<nack::Nack>
-  getNack(const RevocationState& revocationState);
+  prepareNack(const RevocationState& revocationState, Name::Component publisherId, 
+              ndn::time::milliseconds freshnessPeriod = 10_h);
 
   void
   registerPrefix();
@@ -42,11 +48,11 @@ private:
   void
   onRegisterFailed(const std::string& reason);
 
+NDNREVOKE_PUBLIC_WITH_TESTS_ELSE_PRIVATE:
   ndn::Face& m_face;
   RkConfig m_config;
-  std::unique_ptr<RkStorage> m_storage;
   ndn::KeyChain& m_keyChain;
-
+  std::unique_ptr<RkStorage> m_storage;
   std::list<ndn::RegisteredPrefixHandle> m_registeredPrefixHandles;
   std::list<ndn::InterestFilterHandle> m_interestFilterHandles;
 };

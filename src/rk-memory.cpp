@@ -3,6 +3,8 @@
 namespace ndnrevoke {
 namespace rk {
 
+NDN_LOG_INIT(ndnrevoke.rk);
+
 const std::string RkMemory::STORAGE_TYPE = "rk-storage-memory";
 NDNREVOKE_REGISTER_RK_STORAGE(RkMemory);
 
@@ -25,6 +27,7 @@ RkMemory::getRevocationState(const Name& certName)
 void
 RkMemory::addRevocationState(const RevocationState& state)
 {
+  NDN_LOG_TRACE("Adding RevocationState:\n" << state);
   auto search = m_revocationStates.find(state.certName.toUri());
   if (search == m_revocationStates.end()) {
     m_revocationStates.insert(std::make_pair(state.certName.toUri(), state));

@@ -12,7 +12,7 @@
 namespace ndnrevoke {
 namespace rk {
 
-NDN_LOG_INIT(ndncert.rk);
+NDN_LOG_INIT(ndnrevoke.rk);
 
 
 // TODO: need config record Zone
@@ -52,6 +52,7 @@ RkModule::registerPrefix()
       // notice: this only register FIB to Face, not NFD.
       for (auto& zone : m_config.recordZones) {
          auto filterId = m_face.setInterestFilter(zone, [this] (auto&&, const auto& i) { onQuery(i); });
+         NDN_LOG_TRACE("Registering filter for recordZone " << zone);
         m_interestFilterHandles.push_back(filterId);
       }
     },
@@ -66,7 +67,7 @@ RkModule::getRevocationState(const Name& certName)
     return std::make_unique<RevocationState>(m_storage->getRevocationState(certName));
   }
   catch (const std::exception& e) {
-    NDN_LOG_ERROR("Cannot get revocation state record from the storage: " << e.what());
+    NDN_LOG_ERROR("Cannot get revocation state record from the storage\n");
     return nullptr;
   }
 }
@@ -74,11 +75,14 @@ RkModule::getRevocationState(const Name& certName)
 void
 RkModule::onQuery(const Interest& query) {
   // Naming Convention: /<prefix>/REVOKE/<keyid>/<issuer>/<version>
-  NDN_LOG_TRACE("Received Query");
+  // need to validate query format
+  NDN_LOG_TRACE("Received Query " << query);
 
   Name certName = query.getName();
-  certName.getPrefix(record::Record::PUBLISHER_OFFSET);
+  auto publisherId = query.getName().at(record::Record::PUBLISHER_OFFSET);
+  // need more proper handling here
   certName.set(record::Record::REVOKE_OFFSET, Name::Component("KEY"));
+  certName.erase(record::Record::PUBLISHER_OFFSET);
 
   auto state = getRevocationState(certName);
   if (state) {
@@ -92,11 +96,11 @@ RkModule::onQuery(const Interest& query) {
         else {
           NDN_LOG_DEBUG("Certificate is marked as revoked but no corresponding record\n");
           // considered as not revoked
-          m_face.put(*getNack(*state));
+          m_face.put(*prepareNack(*state, publisherId, m_config.nackFreshnessPeriod));
         }
         break;
       case RevocationStatus::VALID_CERTIFICATE:
-        m_face.put(*getNack(*state));
+        m_face.put(*prepareNack(*state, publisherId, m_config.nackFreshnessPeriod));
         break;
       case RevocationStatus::NOTINITIALIZED:
         NDN_LOG_DEBUG("Revocation state not initialized\n");
@@ -113,18 +117,19 @@ RkModule::onQuery(const Interest& query) {
 }
 
 std::shared_ptr<nack::Nack>
-RkModule::getNack(const RevocationState& revocationState)
+RkModule::prepareNack(const RevocationState& revocationState, Name::Component publisherId, 
+                      ndn::time::milliseconds freshnessPeriod)
 {
   state::State state(revocationState.certName, m_keyChain);
   // currently we only have one nack code
   state.setNackCode(tlv::NackCode::NOT_REVOKED);
+  state.setPublisher(publisherId);
 
   // need try-catch in case of not having keys
   const auto& pib = m_keyChain.getPib();
   const auto& identity = pib.getIdentity(m_config.rkPrefix);
-  
-  // need to customize freshness period later
-  return state.genNack(identity.getDefaultKey().getName(), 1_h);
+
+  return state.genNack(identity.getDefaultKey().getName(), freshnessPeriod);
 }
 
 void

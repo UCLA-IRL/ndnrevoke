@@ -9,7 +9,6 @@ namespace ndnrevoke {
 namespace rk {
 
 const std::string CONFIG_RK_PREFIX = "rk-prefix";
-const std::string CONFIG_RECORD_FRESHNESS_PERIOD = "record-freshness-period";
 const std::string CONFIG_NACK_FRESHNESS_PERIOD = "nack-freshness-period";
 const std::string CONFIG_RECORD_ZONES = "record-zones";
 const std::string CONFIG_RECORD_ZONE_PREFIX = "record-zone-prefix";
@@ -34,7 +33,6 @@ RkConfig::load(const std::string& fileName)
   if (rkPrefix.empty()) {
     NDN_THROW(std::runtime_error("Cannot parse rk-prefix from the config file"));
   }
-  recordFreshnessPeriod = time::seconds(configJson.get(CONFIG_RECORD_FRESHNESS_PERIOD, 86400));
   // Nack Freshness Period
   nackFreshnessPeriod = time::seconds(configJson.get(CONFIG_NACK_FRESHNESS_PERIOD, 86400));
   // Record Zones
