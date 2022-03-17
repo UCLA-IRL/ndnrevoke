@@ -22,14 +22,14 @@ public:
   explicit
   Record(const Data& data);
 
-  Name&
-  toCertName()
-  {
-    auto certName = std::make_unique<Name>(getName());
-    certName->getPrefix(PUBLISHER_OFFSET);
-    certName->set(REVOKE_OFFSET, Name::Component("KEY"));
-    return *certName;
-  }
+  // Name&
+  // toCertName()
+  // {
+  //   auto certName = std::make_unique<Name>(getName());
+  //   certName->getPrefix(PUBLISHER_OFFSET);
+  //   certName->set(REVOKE_OFFSET, Name::Component("KEY"));
+  //   return *certName;
+  // }
   
   // /<prefix>/REVOKE/<keyid>/<issuer>/<version>/<publisher>
   static const ssize_t PUBLISHER_OFFSET;
