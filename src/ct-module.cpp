@@ -48,10 +48,15 @@ CtModule::registerPrefix()
       // register for each record Zone
       // notice: this only register FIB to Face, not NFD.
       for (auto& zone : m_config.recordZones) {
-         auto filterId = m_face.setInterestFilter(zone, [this] (auto&&, const auto& i) { onQuery(i); });
-         NDN_LOG_TRACE("Registering filter for recordZone " << zone);
+        auto filterId = m_face.setInterestFilter(zone, [this] (auto&&, const auto& i) { onQuery(i); });
+        NDN_LOG_TRACE("Registering filter for recordZone " << zone);
         m_interestFilterHandles.push_back(filterId);
       }
+
+      // register for submission
+      auto filterId = m_face.setInterestFilter(Name(name).append("submit"), [this] (auto&&, const auto& i) { onSubmission(i); });
+      NDN_LOG_TRACE("Registering filter for submission " << Name(name).append("submit"));
+      m_interestFilterHandles.push_back(filterId);
     },
     [this] (auto&&, const auto& reason) { onRegisterFailed(reason); });
   m_registeredPrefixHandles.push_back(prefixId);
@@ -70,6 +75,49 @@ CtModule::getCertificateState(const Name& certName)
 }
 
 void
+CtModule::onSubmission(const Interest& submission)
+{
+  // Naming Convention: /<CT prefix>/CT/submit/<type>/<paramDigest>/
+  // need to validate submission format
+  NDN_LOG_TRACE("Received Submission " << submission);
+
+  uint64_t statusCode = 1;
+  const uint32_t submissionStatusType = 211U;
+  const ssize_t submissionTypeOffset = -4;
+  auto submissionType = submission.getName().at(submissionTypeOffset).toUri();
+  if (submissionType == "cert") {
+    auto paramBlock = submission.getApplicationParameters().blockFromValue();
+    Certificate cert(paramBlock);
+    auto certState = makeCertificateState(cert);
+    try {
+      m_storage->addCertificateState(*certState);
+    }
+    catch (const std::exception& e) {
+      m_storage->updateCertificateState(*certState);
+    }
+  }
+  else if (submissionType == "record") {
+    auto paramBlock = submission.getApplicationParameters().blockFromValue();
+    record::Record record(paramBlock);
+    auto certState = makeCertificateState(record);
+    try {
+      m_storage->addCertificateState(*certState);
+    }
+    catch (const std::exception& e) {
+      m_storage->updateCertificateState(*certState);
+    }
+  }
+  else {
+    NDN_LOG_ERROR("Submission type not recognized: " + submissionType + "\n");
+    statusCode = 0;
+  }
+  Data reply(submission.getName());
+  reply.setContent(ndn::makeNonNegativeIntegerBlock(submissionStatusType, statusCode));
+  m_keyChain.sign(reply, ndn::signingByIdentity(m_config.ctPrefix));
+  m_face.put(reply);
+}
+
+void
 CtModule::onQuery(const Interest& query) {
   // Naming Convention: /<prefix>/REVOKE/<keyid>/<issuer>/<version>
   // need to validate query format
@@ -84,7 +132,7 @@ CtModule::onQuery(const Interest& query) {
   auto state = getCertificateState(certName);
   if (state) {
     // Ct knows the answer
-    NDN_LOG_TRACE("Record Keeper gets the local state\n");
+    NDN_LOG_TRACE("CT gets the local state\n");
     switch (state->status) {
       case CertificateStatus::REVOKED_CERTIFICATE:
         if (!state->record.getName().empty()) {

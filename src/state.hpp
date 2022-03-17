@@ -34,6 +34,17 @@ public:
   void
   getNack(const nack::Nack& nack);
 
+  // a quick hack, the submission protocol between cert/record producers and the CT
+  // needs serious discussion.
+  // by default submitting certificate
+  std::shared_ptr<Interest>
+  genSubmissionInterest(const Name& ctPreix, const Certificate& cert, 
+                        const Name& signingKeyName);
+
+  std::shared_ptr<Interest>
+  genSubmissionInterest(const Name& ctPreix, const record::Record& record, 
+                        const Name& signingKeyName);
+
   // util
   bool
   isRevoked()

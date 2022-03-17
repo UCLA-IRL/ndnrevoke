@@ -32,6 +32,9 @@ public:
   }
 
   void
+  onSubmission(const Interest& submission);
+
+  void
   onQuery(const Interest& query);
 
   std::unique_ptr<CertificateState>

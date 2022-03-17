@@ -19,7 +19,7 @@ BOOST_AUTO_TEST_CASE(Initialization)
 
   advanceClocks(time::milliseconds(20), 60);
   BOOST_CHECK_EQUAL(ct.m_registeredPrefixHandles.size(), 1); // removed local discovery registration
-  BOOST_CHECK_EQUAL(ct.m_interestFilterHandles.size(), 2);  // two record zones: /ndn/site1, /ndn/site2
+  BOOST_CHECK_EQUAL(ct.m_interestFilterHandles.size(), 3);  // two record zones: /ndn/site1, /ndn/site2, one submision prefix
 }
 
 BOOST_AUTO_TEST_CASE(HandleQueryAndRecord)
@@ -47,8 +47,9 @@ BOOST_AUTO_TEST_CASE(HandleQueryAndRecord)
   state.setPublisher(Name::Component("self"));
   auto record = state.genOwnerRecord(key2.getName(), 100_h);
 
-  auto certState = makeCertificateState(*record);
-  ct.m_storage->addCertificateState(*certState);
+  face.receive(*state.genSubmissionInterest(Name("/ndn"), *record, key2.getName()));
+  advanceClocks(time::milliseconds(20), 60);
+
   face.onSendData.connect([&](const Data& response) {
     BOOST_CHECK(verifySignature(response, cert2));
     state::State state2(cert2.getName(), m_keyChain);
@@ -79,8 +80,10 @@ BOOST_AUTO_TEST_CASE(HandleQueryAndNack)
   Interest interest(recordName);
   interest.setCanBePrefix(true);
 
-  auto certState = makeCertificateState(cert2);
-  ct.m_storage->addCertificateState(*certState);
+  state::State state(cert2, m_keyChain);
+
+  face.receive(*state.genSubmissionInterest(Name("/ndn"), cert2, key2.getName()));
+  advanceClocks(time::milliseconds(20), 60);
 
   face.onSendData.connect([&](const Data& response) {
     BOOST_CHECK(verifySignature(response, cert));

@@ -97,5 +97,31 @@ State::getNack(const nack::Nack& nack)
   nacktlv::decodeNackContent(nack.getContent(), *this);
 }
 
+std::shared_ptr<Interest>
+State::genSubmissionInterest(const Name& ctPrefix, const Certificate& cert, const Name& signingKeyName)
+{
+  // naming convention: /<CT prefix>/CT/submit/<type>/<paramDigest>
+  auto interestName = ctPrefix;
+  interestName.append("CT");
+  interestName.append("submit").append("cert");
+  auto interest = std::make_shared<Interest>(interestName);
+  interest->setApplicationParameters(cert.wireEncode());
+  m_keyChain.sign(*interest, signingByKey(signingKeyName));
+  return interest;
+}
+
+std::shared_ptr<Interest>
+State::genSubmissionInterest(const Name& ctPrefix, const record::Record& record, const Name& signingKeyName)
+{
+  // naming convention: /<CT prefix>/CT/submit/<type>/<paramDigest>
+  auto interestName = ctPrefix;
+  interestName.append("CT");
+  interestName.append("submit").append("record");
+  auto interest = std::make_shared<Interest>(interestName);
+  interest->setApplicationParameters(record.wireEncode());
+  m_keyChain.sign(*interest, signingByKey(signingKeyName));
+  return interest;
+}
+
 } // namespace record
 } // namespace ndnrevoke
