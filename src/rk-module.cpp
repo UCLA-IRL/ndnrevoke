@@ -12,7 +12,7 @@
 namespace ndnrevoke {
 namespace rk {
 
-NDN_LOG_INIT(ndncert.ca);
+NDN_LOG_INIT(ndncert.rk);
 
 
 // TODO: need config record Zone
