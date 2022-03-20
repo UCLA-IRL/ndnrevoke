@@ -5,8 +5,6 @@
 namespace ndnrevoke {
 namespace append {
 
-NDN_LOG_INIT(ndnrevoke.append);
-
 Handle::Handle(const Name& localPrefix, ndn::Face& face, ndn::KeyChain& keyChain)
   : m_localPrefix(localPrefix)
   , m_face(face)
