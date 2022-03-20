@@ -37,6 +37,6 @@ public:
 };
 
 } // namespace record
-} // namespace ndncert
+} // namespace ndnrevoke
 
 #endif // NDNREVOKE_RECORD_HPP

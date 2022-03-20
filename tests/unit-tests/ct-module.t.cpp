@@ -98,7 +98,7 @@ BOOST_AUTO_TEST_CASE(HandleQueryAndNack)
   advanceClocks(time::milliseconds(20), 60);
 }
 
-BOOST_AUTO_TEST_SUITE_END() // TestRkModule
+BOOST_AUTO_TEST_SUITE_END() // TestCtModule
 
 } // namespace tests
 } // namespace ndnrevoke

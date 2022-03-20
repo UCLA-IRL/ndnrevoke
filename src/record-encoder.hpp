@@ -15,6 +15,6 @@ void
 decodeRecordContent(const Block& recordContent, state::State& state);
 
 } // namespace recordtlv
-} // namespace ndncert
+} // namespace ndnrevoke
 
 #endif // NDNREVOKE_RECORD_ENCODER_HPP
