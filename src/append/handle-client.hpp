@@ -13,34 +13,16 @@ namespace append {
 class HandleClient : public Handle
 {
 public:
+  explicit
+  HandleClient(const ndn::Name& prefix, ndn::Face& face, ndn::KeyChain& keyChain);
 
   void
-  setData(Data& data)
-  {
-    m_data = data;
-  }
+  appendData(const ndn::Name& topic, Data& data);
 
-  void
-  AppendData(Data& data);
-
-  Data&
-  getData()
-  {
-    return m_data;
-  }
-  
-  void
-  setRemotePrefix(const ndn::Name& remotePrefix)
-  {
-    m_remotePrefix = remotePrefix;
-  }
-  
-  void
-  runAppend();
 NDNREVOKE_PUBLIC_WITH_TESTS_ELSE_PRIVATE:
 
   void
-  runNotify(uint64_t nonce, Data data);
+  runNotify(const ndn::Name& topic, uint64_t nonce, Data data);
 
   void
   onNotificationAck(const Data& data);
@@ -53,8 +35,6 @@ NDNREVOKE_PUBLIC_WITH_TESTS_ELSE_PRIVATE:
   onCommandFetchingInterest(const Interest& interest);
 
 NDNREVOKE_PUBLIC_WITH_TESTS_ELSE_PRIVATE:
-  ndn::Name m_remotePrefix;
-  Data m_data;
   std::map<uint64_t, Data> m_nonceMap;
 };
 

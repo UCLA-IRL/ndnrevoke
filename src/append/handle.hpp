@@ -15,6 +15,8 @@ public:
   explicit
   Handle(const ndn::Name& prefix, ndn::Face& face, ndn::KeyChain& keyChain);
 
+  ~Handle();
+
   void
   setForwardingHint(const ndn::Name& forwardingHint)
   {
@@ -47,6 +49,9 @@ NDNREVOKE_PUBLIC_WITH_TESTS_ELSE_PROTECTED:
   ndn::Face& m_face;
   ndn::KeyChain& m_keyChain;
   tlv::AppendStatus m_statusCode = tlv::AppendStatus::NOTINITIALIZED;
+
+  std::list<ndn::RegisteredPrefixHandle> m_registeredPrefixHandles;
+  std::list<ndn::InterestFilterHandle> m_interestFilterHandles;
 };
 
 } // namespace append

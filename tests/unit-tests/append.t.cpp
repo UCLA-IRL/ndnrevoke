@@ -1,4 +1,5 @@
 #include "append/handle-ct.hpp"
+#include "append/handle-client.hpp"
 #include "append/append-encoder.hpp"
 #include "state.hpp"
 #include "test-common.hpp"
@@ -57,7 +58,11 @@ BOOST_AUTO_TEST_CASE(AppendHandleCTCommand)
   HandleCt handleCt(identity.getName(), face, m_keyChain);
 
   auto topic = Name(identity.getName()).append("append");
-  handleCt.listenOnTopic(topic, [](auto i) {std::cout << "nice" << std::endl;});
+  handleCt.listenOnTopic(topic, [](auto i) {
+    auto content = i.getContent();
+    BOOST_CHECK_EQUAL(i.getContent().value_size(), std::strlen("Hello, world!"));
+    BOOST_CHECK(!std::memcmp(i.getContent().value(), "Hello, world!", i.getContent().value_size()));
+  });
   advanceClocks(time::milliseconds(20), 60);
 
   auto nonce = ndn::random::generateSecureWord64();
@@ -94,7 +99,44 @@ BOOST_AUTO_TEST_CASE(AppendHandleCTCommand)
   advanceClocks(time::milliseconds(20), 60);
 }
 
-BOOST_AUTO_TEST_SUITE_END() // TestRkModule
+BOOST_AUTO_TEST_CASE(AppendHandleClient)
+{
+  auto identity = addIdentity(Name("/ndn"));
+  auto key = identity.getDefaultKey();
+  auto cert = key.getDefaultCertificate();
+
+  auto identity2 = addIdentity(Name("/ndn/site1/abc"));
+  auto key2 = identity2.getDefaultKey();
+  auto cert2 = key2.getDefaultCertificate();
+
+  DummyClientFace face(io, m_keyChain, {true, true});
+  HandleClient client(identity2.getName(), face, m_keyChain);
+
+  Data data("/ndn/site1/abc/def");
+  static const std::string str("Hello, world!");
+  data.setContent(reinterpret_cast<const uint8_t*>(str.data()), str.size());
+  m_keyChain.sign(data, ndn::signingByIdentity(identity2));
+  BOOST_CHECK_EQUAL(client.m_nonceMap.size(), 0);
+  client.appendData(Name("/ndn/append"), data);
+  advanceClocks(time::milliseconds(20), 60);
+
+  BOOST_CHECK_GT(client.m_nonceMap.size(), 0);
+  uint64_t nonce = client.m_nonceMap.begin()->first;
+  Name fetcherName = Name(identity2.getName()).append("msg").append(identity.getName())
+                                              .appendNumber(nonce);
+  Interest commandFetcher(fetcherName);
+  face.receive(commandFetcher);
+  advanceClocks(time::milliseconds(20), 60);
+
+  Interest dataFetcher("/ndn/site1/abc/def");
+  face.receive(dataFetcher);
+  advanceClocks(time::milliseconds(20), 60);
+  // should be erased
+  BOOST_CHECK_EQUAL(client.m_nonceMap.size(), 0);
+}
+
+
+BOOST_AUTO_TEST_SUITE_END() // TestCtModule
 
 } // namespace tests
 } // namespace ndnrevoke

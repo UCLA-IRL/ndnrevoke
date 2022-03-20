@@ -27,9 +27,11 @@ HandleCt::listenOnTopic(Name& topic, const UpdateCallback& onUpdateCallback)
     // register for each record Zone
     // notice: this only register FIB to Face, not NFD.
     auto filterId = m_face.setInterestFilter(Name(m_topic).append("notify"), [this] (auto&&, const auto& i) { onNotification(i); });
+    m_interestFilterHandles.push_back(filterId);
     NDN_LOG_TRACE("Registering filter for notification " << Name(m_topic).append("notify"));
     },
     [] (auto&&, const auto& reason) { NDN_LOG_ERROR("Failed to register prefix in local hub's daemon, REASON: " << reason); });
+    m_registeredPrefixHandles.push_back(prefixId);
    }
 }
 

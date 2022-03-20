@@ -12,5 +12,15 @@ Handle::Handle(const Name& localPrefix, ndn::Face& face, ndn::KeyChain& keyChain
 {
 }
 
+Handle::~Handle()
+{
+  for (auto& handle : m_interestFilterHandles) {
+    handle.cancel();
+  }
+  for (auto& handle : m_registeredPrefixHandles) {
+    handle.unregister();
+  }
+}
+
 } // namespace append
 } // namespace ndnrevoke
