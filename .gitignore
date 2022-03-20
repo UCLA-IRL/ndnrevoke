@@ -11,6 +11,7 @@
 
 # Clion
 .idea
+cmake-build-*/
 
 # macOS
 .DS_Store
