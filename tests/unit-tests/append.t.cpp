@@ -37,7 +37,6 @@ BOOST_AUTO_TEST_CASE(AppendHandleCTNotify)
   auto param = appendtlv::encodeAppendParameters(identity2.getName(), nonce, Name());
   param.encode();
   notification.setApplicationParameters(param);
-  std::cout << nonce << std::endl;
 
   face.receive(notification);
   advanceClocks(time::milliseconds(20), 60);
