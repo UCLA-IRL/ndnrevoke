@@ -20,6 +20,9 @@ public:
     m_data = data;
   }
 
+  void
+  AppendData(Data& data);
+
   Data&
   getData()
   {
@@ -37,7 +40,11 @@ public:
 NDNREVOKE_PUBLIC_WITH_TESTS_ELSE_PRIVATE:
 
   void
-  runNotify();
+  runNotify(uint64_t nonce, Data data);
+
+  void
+  onNotificationAck(const Data& data);
+
 
   void
   onDataFetchingInterest(const ndn::InterestFilter&, const Interest& interest);
@@ -45,11 +52,10 @@ NDNREVOKE_PUBLIC_WITH_TESTS_ELSE_PRIVATE:
   void
   onCommandFetchingInterest(const Interest& interest);
 
-  void
-  onRegisterFailed(const std::string& reason);
 NDNREVOKE_PUBLIC_WITH_TESTS_ELSE_PRIVATE:
   ndn::Name m_remotePrefix;
   Data m_data;
+  std::map<uint64_t, Data> m_nonceMap;
 };
 
 } // namespace append

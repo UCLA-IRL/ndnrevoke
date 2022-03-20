@@ -1,4 +1,3 @@
-#include "append/append-encoder.hpp"
 #include "append/append-common.hpp"
 #include "append/handle-ct.hpp"
 
@@ -15,9 +14,10 @@ HandleCt::HandleCt(const ndn::Name& prefix, ndn::Face& face, ndn::KeyChain& keyC
 }
 
 void
-HandleCt::listenOnTopic(Name& topic)
+HandleCt::listenOnTopic(Name& topic, const UpdateCallback& onUpdateCallback)
 {
   m_topic = topic;
+  m_updateCallback = onUpdateCallback;
   if (m_topic.empty()) {
     NDN_LOG_TRACE("No topic to listen, return\n");
     return;
@@ -29,7 +29,7 @@ HandleCt::listenOnTopic(Name& topic)
     auto filterId = m_face.setInterestFilter(Name(m_topic).append("notify"), [this] (auto&&, const auto& i) { onNotification(i); });
     NDN_LOG_TRACE("Registering filter for notification " << Name(m_topic).append("notify"));
     },
-    [this] (auto&&, const auto& reason) { NDN_LOG_ERROR("Failed to register prefix in local hub's daemon, REASON: " << reason); });
+    [] (auto&&, const auto& reason) { NDN_LOG_ERROR("Failed to register prefix in local hub's daemon, REASON: " << reason); });
    }
 }
 
@@ -38,12 +38,11 @@ HandleCt::onNotification(Interest interest)
 {
   // Interest: <topic>/<nonce>/<paramDigest>
   // <topic> should be /<ct-prefix>/append
-  NDN_LOG_DEBUG(interest);
-
   appendtlv::AppenderInfo info;
   appendtlv::decodeAppendParameters(interest.getApplicationParameters(), info);
-  NDN_LOG_DEBUG("nonce = " << info.nonce << " remotePrefix = " << info.remotePrefix);
-  addNonce(info.nonce, info.remotePrefix);
+  NDN_LOG_TRACE("New notification: [nonce " << info.nonce << " ] [remotePrefix " << info.remotePrefix << " ]");
+  info.interestName = interest.getName();
+  m_nonceMap.insert({info.nonce, info});
 
   // send interst: /<remotePrefix>/msg/<topic>/<nonce>
   Interest commandFetcher(Name(info.remotePrefix).append("msg").append(m_topic)
@@ -52,43 +51,51 @@ HandleCt::onNotification(Interest interest)
     commandFetcher.setForwardingHint({info.commandForwardingHint});
   }
 
-  // do we really need to sign notification interest? I don't think so?
-  // m_keyChain.sign(notification);
-
   // ideally we need fill in all three callbacks
+  commandFetcher.setCanBePrefix(false);
   m_face.expressInterest(commandFetcher, [this] (auto&&, const auto& i) { onCommandData(i); }, nullptr, nullptr);
-  NDN_LOG_DEBUG(commandFetcher);
 }
 
 void
 HandleCt::onCommandData(Data data)
 {
-  NDN_LOG_DEBUG(data);
+  // /ndn/site1/abc/msg/ndn/append/%29%40%87u%89%F9%8D%E4
   auto content = data.getContent();
-  appendtlv::AppenderInfo info;
-  appendtlv::decodeAppendContent(content, info);
 
-  auto item = findNonce(info.nonce);
-  NDN_LOG_DEBUG("nonce = " << info.nonce << " prefix = " << item->second);
-  deleteNonce(info.nonce);
+  const ssize_t NONCE_OFFSET = -1;
+  const uint64_t nonce = data.getName().at(NONCE_OFFSET).toNumber();
+  auto item = m_nonceMap.find(nonce);
 
-  // fetch the actual data
-  Interest dataFetcher(info.dataName);
-  if (!info.dataForwardingHint.empty()) {
-    dataFetcher.setForwardingHint({info.dataForwardingHint});
+  Data ack(item->second.interestName);
+
+  if (item != m_nonceMap.end()) {
+    appendtlv::decodeAppendContent(content, item->second);
+    NDN_LOG_TRACE("New command: [nonce " << item->second.nonce << " ] [dataName " 
+                                         << item->second.dataName << " ]");
+    // acking notification
+    ack.setContent(ndn::makeNonNegativeIntegerBlock(tlv::AppendStatusCode, static_cast<uint64_t>(tlv::AppendStatus::SUCCESS)));
+    m_keyChain.sign(ack, ndn::signingByIdentity(m_localPrefix));
+    m_face.put(ack);
+
+    // fetch the actual data
+    Interest dataFetcher(item->second.dataName);
+
+    if (!item->second.dataForwardingHint.empty()) {
+        dataFetcher.setForwardingHint({item->second.dataForwardingHint});
+    }
+    // ideally we need fill in all three callbacks
+    m_face.expressInterest(dataFetcher, [this] (auto&&, const auto& i) {
+      NDN_LOG_TRACE("Retrieve data " << i.getName());
+      m_updateCallback(i);
+    }, nullptr, nullptr);
   }
-
-  // do we really need to sign notification interest? I don't think so?
-  // m_keyChain.sign(notification);
-
-  // ideally we need fill in all three callbacks
-  m_face.expressInterest(dataFetcher, [this] (auto&&, const auto& i) {
-    m_updateCallback(i);
-  }, nullptr, nullptr);
-
+  else {
+    // send status code = NOTINITIALIZED
+    ack.setContent(ndn::makeNonNegativeIntegerBlock(tlv::AppendStatusCode, static_cast<uint64_t>(tlv::AppendStatus::NOTINITIALIZED)));
+    m_keyChain.sign(ack, ndn::signingByIdentity(m_localPrefix));
+    m_face.put(ack);
+  }
+  m_nonceMap.erase(nonce);
 }
-
-
-
 } // namespace append
 } // namespace ndnrevoke
