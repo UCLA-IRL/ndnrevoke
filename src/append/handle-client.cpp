@@ -5,7 +5,7 @@
 #include <ndn-cxx/security/signing-helpers.hpp>
 
 namespace ndnrevoke {
-namespace append {
+namespace append { 
 
 NDN_LOG_INIT(ndnrevoke.append);
 
@@ -136,7 +136,8 @@ HandleClient::onNotificationAck(const uint64_t nonce, const Data& data)
         m_callback.erase(iter);
       }
       break;
-    case tlv::AppendStatus::FAILURE:
+    case tlv::AppendStatus::FAILURE_NACK:
+    case tlv::AppendStatus::FAILURE_TIMEOUT:
       NDN_LOG_TRACE("Append failed\n");
       if (iter != m_callback.end()) {
         iter->second.onFailure(data);

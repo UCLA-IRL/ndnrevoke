@@ -65,34 +65,58 @@ HandleCt::onCommandData(Data data)
 {
   // /ndn/site1/abc/msg/ndn/append/%29%40%87u%89%F9%8D%E4
   auto content = data.getContent();
-
   const ssize_t NONCE_OFFSET = -1;
   const uint64_t nonce = data.getName().at(NONCE_OFFSET).toNumber();
   auto item = m_nonceMap.find(nonce);
 
   if (item != m_nonceMap.end()) {
-    Data ack(item->second.interestName);
-    appendtlv::decodeAppendContent(content, item->second);
-    NDN_LOG_TRACE("New command: [nonce " << item->second.nonce << " ] [dataName " 
-                                         << item->second.dataName << " ]");
-    // acking notification
-    ack.setContent(ndn::makeNonNegativeIntegerBlock(tlv::AppendStatusCode, static_cast<uint64_t>(tlv::AppendStatus::SUCCESS)));
-    m_keyChain.sign(ack, ndn::signingByIdentity(m_localPrefix));
-    m_face.put(ack);
-
     // fetch the actual data
-    Interest dataFetcher(item->second.dataName);
+    appendtlv::decodeAppendContent(content, item->second);
+    Interest dataFetcher;
+    
+    if (!item->second.dataName.empty()) {
+      dataFetcher.setName(item->second.dataName);
+    }
+    else {
+      NDN_LOG_ERROR("No corresponding notification available, return");
+      return;
+    }
 
     if (!item->second.dataForwardingHint.empty()) {
         dataFetcher.setForwardingHint({item->second.dataForwardingHint});
     }
     // ideally we need fill in all three callbacks
-    m_face.expressInterest(dataFetcher, [this] (auto&&, const auto& i) {
+    m_face.expressInterest(dataFetcher, [this, item, content] (auto&&, const auto& i) {
       NDN_LOG_TRACE("Retrieve data " << i.getName());
+      NDN_LOG_TRACE("New command: [nonce " << item->second.nonce << " ] [dataName " 
+                                            << item->second.dataName << " ]");
+      // acking notification
+      m_face.put(*makeNotificationAck(item->second.interestName, tlv::AppendStatus::SUCCESS));
+      NDN_LOG_TRACE("Putting notification ack");
+
+      // triggering callback
       m_updateCallback(i);
-    }, nullptr, nullptr);
+    },
+    [this, item] (auto&, auto&) {
+      m_face.put(*makeNotificationAck(item->second.interestName, tlv::AppendStatus::FAILURE_NACK));
+      NDN_LOG_TRACE("Putting notification ack");        
+    }, 
+    [this, item] (auto&) {
+      m_face.put(*makeNotificationAck(item->second.interestName, tlv::AppendStatus::FAILURE_TIMEOUT));
+      NDN_LOG_TRACE("Putting notification ack");        
+    });
   }
   m_nonceMap.erase(nonce);
+}
+
+std::shared_ptr<Data>
+HandleCt::makeNotificationAck(const Name& notificationName, const tlv::AppendStatus status)
+{
+  auto data = std::make_shared<Data>(notificationName);
+  // acking notification
+  data->setContent(ndn::makeNonNegativeIntegerBlock(tlv::AppendStatusCode, static_cast<uint64_t>(status)));
+  m_keyChain.sign(*data, ndn::signingByIdentity(m_localPrefix));
+  return data;
 }
 } // namespace append
 } // namespace ndnrevoke

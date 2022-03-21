@@ -25,9 +25,9 @@ NDNREVOKE_PUBLIC_WITH_TESTS_ELSE_PRIVATE:
 
   void
   onCommandData(Data data);
-
-  void
-  onData(Data data);
+  
+  std::shared_ptr<Data>
+  makeNotificationAck(const Name& notificationName, const tlv::AppendStatus status);
 
 NDNREVOKE_PUBLIC_WITH_TESTS_ELSE_PRIVATE:
   std::map<uint64_t, appendtlv::AppenderInfo> m_nonceMap;

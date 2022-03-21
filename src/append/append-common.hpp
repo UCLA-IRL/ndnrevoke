@@ -42,7 +42,8 @@ enum : uint32_t {
 // Append Status
 enum class AppendStatus : uint64_t {
   SUCCESS = 0,
-  FAILURE = 1,
+  FAILURE_NACK = 1,
+  FAILURE_TIMEOUT = 2,
   NOTINITIALIZED = 99,
 };
 

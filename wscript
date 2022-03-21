@@ -76,7 +76,7 @@ def build(bld):
     bld.recurse('tests')
 
     bld.install_files(
-        dest='${INCLUDEDIR}/revoke',
+        dest='${INCLUDEDIR}/ndnrevoke',
         files=bld.path.ant_glob('src/**/*.hpp'),
         cwd=bld.path.find_dir('src'),
         relative_trick=True)

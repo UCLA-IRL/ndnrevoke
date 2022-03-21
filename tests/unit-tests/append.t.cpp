@@ -74,7 +74,7 @@ BOOST_AUTO_TEST_CASE(AppendHandleCTCommand)
   param.encode();
   notification.setApplicationParameters(param);
 
-  face.receive(notification);
+  handleCt.onNotification(notification);
   advanceClocks(time::milliseconds(20), 60);
   BOOST_CHECK_EQUAL(handleCt.m_nonceMap.find(nonce)->second.interestName, notification.getName());
 
@@ -88,7 +88,7 @@ BOOST_AUTO_TEST_CASE(AppendHandleCTCommand)
   command.setFreshnessPeriod(10_s);
   m_keyChain.sign(command, ndn::signingByIdentity(identity2));
 
-  face.receive(command);
+  handleCt.onCommandData(command);
   advanceClocks(time::milliseconds(20), 60);
 
   Data data(dataName);
@@ -208,14 +208,14 @@ BOOST_AUTO_TEST_CASE(AppendHandleClientCallback)
       BOOST_CHECK_EQUAL(content.elements_size(), 1);
       BOOST_CHECK_EQUAL(content.elements_begin()->type(), tlv::AppendStatusCode);
       BOOST_CHECK_EQUAL(readNonNegativeInteger(*content.elements_begin()),
-                        static_cast<uint64_t>(tlv::AppendStatus::FAILURE));
+                        static_cast<uint64_t>(tlv::AppendStatus::FAILURE_NACK));
     }, nullptr);
   BOOST_CHECK_EQUAL(client.m_nonceMap.size(), 1);
   const uint64_t nonce2 = client.m_nonceMap.begin()->first;
   auto notification2 = client.makeNotification(Name(identity.getName()).append("append"), nonce2);
   Data ack2(notification2->getName());
   ack2.setContent(ndn::makeNonNegativeIntegerBlock(tlv::AppendStatusCode, 
-                  static_cast<uint64_t>(tlv::AppendStatus::FAILURE)));
+                  static_cast<uint64_t>(tlv::AppendStatus::FAILURE_NACK)));
   m_keyChain.sign(ack2, ndn::signingByIdentity(identity));
   client.onNotificationAck(nonce2, ack2);
   advanceClocks(time::milliseconds(20), 60);
