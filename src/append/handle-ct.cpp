@@ -23,14 +23,16 @@ HandleCt::listenOnTopic(Name& topic, const UpdateCallback& onUpdateCallback)
     return;
   }
   else {
-  auto prefixId = m_face.registerPrefix(m_topic,[&] (const Name& name) {
-    // register for each record Zone
-    // notice: this only register FIB to Face, not NFD.
-    auto filterId = m_face.setInterestFilter(Name(m_topic).append("notify"), [this] (auto&&, const auto& i) { onNotification(i); });
-    m_interestFilterHandles.push_back(filterId);
-    NDN_LOG_TRACE("Registering filter for notification " << Name(m_topic).append("notify"));
+    auto prefixId = m_face.registerPrefix(m_topic,[&] (const Name& name) {
+      // register for each record Zone
+      // notice: this only register FIB to Face, not NFD.
+      auto filterId = m_face.setInterestFilter(Name(m_topic).append("notify"), [this] (auto&&, const auto& i) { onNotification(i); });
+      m_interestFilterHandles.push_back(filterId);
+      NDN_LOG_TRACE("Registering filter for notification " << Name(m_topic).append("notify"));
     },
-    [] (auto&&, const auto& reason) { NDN_LOG_ERROR("Failed to register prefix in local hub's daemon, REASON: " << reason); });
+    [] (auto&&, const auto& reason) { 
+      NDN_LOG_ERROR("Failed to register prefix in local hub's daemon, REASON: " << reason);
+    });
     m_registeredPrefixHandles.push_back(prefixId);
    }
 }
@@ -68,9 +70,8 @@ HandleCt::onCommandData(Data data)
   const uint64_t nonce = data.getName().at(NONCE_OFFSET).toNumber();
   auto item = m_nonceMap.find(nonce);
 
-  Data ack(item->second.interestName);
-
   if (item != m_nonceMap.end()) {
+    Data ack(item->second.interestName);
     appendtlv::decodeAppendContent(content, item->second);
     NDN_LOG_TRACE("New command: [nonce " << item->second.nonce << " ] [dataName " 
                                          << item->second.dataName << " ]");
@@ -90,12 +91,6 @@ HandleCt::onCommandData(Data data)
       NDN_LOG_TRACE("Retrieve data " << i.getName());
       m_updateCallback(i);
     }, nullptr, nullptr);
-  }
-  else {
-    // send status code = NOTINITIALIZED
-    ack.setContent(ndn::makeNonNegativeIntegerBlock(tlv::AppendStatusCode, static_cast<uint64_t>(tlv::AppendStatus::NOTINITIALIZED)));
-    m_keyChain.sign(ack, ndn::signingByIdentity(m_localPrefix));
-    m_face.put(ack);
   }
   m_nonceMap.erase(nonce);
 }

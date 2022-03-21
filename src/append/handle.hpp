@@ -17,38 +17,10 @@ public:
 
   ~Handle();
 
-  void
-  setForwardingHint(const ndn::Name& forwardingHint)
-  {
-    m_forwardingHint = forwardingHint;
-  }
-
-  void
-  setNonce(const uint64_t nonce)
-  {
-    m_nonce = nonce;
-  }
-
-  ndn::Name&
-  getForwardingHint()
-  {
-    return m_forwardingHint;
-  }
-
-  tlv::AppendStatus
-  getStatusCode()
-  {
-    return m_statusCode;
-  }
-
 NDNREVOKE_PUBLIC_WITH_TESTS_ELSE_PROTECTED:
   ndn::Name m_localPrefix;
-  uint64_t m_nonce;
-  ndn::Name m_dataName;
-  ndn::Name m_forwardingHint;
   ndn::Face& m_face;
   ndn::KeyChain& m_keyChain;
-  tlv::AppendStatus m_statusCode = tlv::AppendStatus::NOTINITIALIZED;
 
   std::list<ndn::RegisteredPrefixHandle> m_registeredPrefixHandles;
   std::list<ndn::InterestFilterHandle> m_interestFilterHandles;

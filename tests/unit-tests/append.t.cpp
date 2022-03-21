@@ -120,7 +120,7 @@ BOOST_AUTO_TEST_CASE(AppendHandleClient)
   client.appendData(Name("/ndn/append"), data);
   advanceClocks(time::milliseconds(20), 60);
 
-  BOOST_CHECK_GT(client.m_nonceMap.size(), 0);
+  BOOST_CHECK_EQUAL(client.m_nonceMap.size(), 1);
   uint64_t nonce = client.m_nonceMap.begin()->first;
   Name fetcherName = Name(identity2.getName()).append("msg").append(identity.getName())
                                               .appendNumber(nonce);
@@ -135,6 +135,92 @@ BOOST_AUTO_TEST_CASE(AppendHandleClient)
   BOOST_CHECK_EQUAL(client.m_nonceMap.size(), 0);
 }
 
+BOOST_AUTO_TEST_CASE(AppendHandleClientStatus)
+{
+  auto identity = addIdentity(Name("/ndn"));
+  auto key = identity.getDefaultKey();
+  auto cert = key.getDefaultCertificate();
+
+  auto identity2 = addIdentity(Name("/ndn/site1/abc"));
+  auto key2 = identity2.getDefaultKey();
+  auto cert2 = key2.getDefaultCertificate();
+
+  DummyClientFace face(io, m_keyChain, {true, true});
+  HandleClient client(identity2.getName(), face, m_keyChain);
+
+  BOOST_CHECK_EQUAL(client.m_nonceMap.size(), 0);
+  uint64_t nonce = ndn::random::generateSecureWord64();
+  client.m_nonceMap.insert({nonce, Data()});
+
+  auto notification = client.makeNotification(Name(identity.getName()).append("append"), nonce);
+  Data ack(notification->getName());
+  ack.setContent(ndn::makeNonNegativeIntegerBlock(tlv::AppendStatusCode, 
+                 static_cast<uint64_t>(tlv::AppendStatus::SUCCESS)));
+  m_keyChain.sign(ack, ndn::signingByIdentity(identity));
+  client.onNotificationAck(nonce, ack);
+  BOOST_CHECK_EQUAL(client.m_nonceMap.size(), 0);
+}
+
+BOOST_AUTO_TEST_CASE(AppendHandleClientCallback)
+{
+  auto identity = addIdentity(Name("/ndn"));
+  auto key = identity.getDefaultKey();
+  auto cert = key.getDefaultCertificate();
+
+  auto identity2 = addIdentity(Name("/ndn/site1/abc"));
+  auto key2 = identity2.getDefaultKey();
+  auto cert2 = key2.getDefaultCertificate();
+
+  DummyClientFace face(io, m_keyChain, {true, true});
+  HandleClient client(identity2.getName(), face, m_keyChain);
+
+  Data data("/ndn/site1/abc/def");
+  static const std::string str("Hello, world!");
+  data.setContent(reinterpret_cast<const uint8_t*>(str.data()), str.size());
+  m_keyChain.sign(data, ndn::signingByIdentity(identity2));
+  BOOST_CHECK_EQUAL(client.m_nonceMap.size(), 0);
+  client.appendData(Name("/ndn/append"), data, 
+    [] (auto& i) {
+      Block content = i.getContent();
+      content.parse();
+      BOOST_CHECK_EQUAL(content.elements_size(), 1);
+      BOOST_CHECK_EQUAL(content.elements_begin()->type(), tlv::AppendStatusCode);
+      BOOST_CHECK_EQUAL(readNonNegativeInteger(*content.elements_begin()),
+                        static_cast<uint64_t>(tlv::AppendStatus::SUCCESS));
+    }, nullptr, nullptr);
+  advanceClocks(time::milliseconds(20), 60);
+
+  BOOST_CHECK_EQUAL(client.m_nonceMap.size(), 1);
+  const uint64_t nonce = client.m_nonceMap.begin()->first;
+  auto notification = client.makeNotification(Name(identity.getName()).append("append"), nonce);
+  Data ack(notification->getName());
+  ack.setContent(ndn::makeNonNegativeIntegerBlock(tlv::AppendStatusCode, 
+                 static_cast<uint64_t>(tlv::AppendStatus::SUCCESS)));
+  m_keyChain.sign(ack, ndn::signingByIdentity(identity));
+  client.onNotificationAck(nonce, ack);
+  advanceClocks(time::milliseconds(20), 60);
+  BOOST_CHECK_EQUAL(client.m_nonceMap.size(), 0);
+  
+  client.appendData(Name("/ndn/append"), data, nullptr,
+    [] (auto& i) {
+      Block content = i.getContent();
+      content.parse();
+      BOOST_CHECK_EQUAL(content.elements_size(), 1);
+      BOOST_CHECK_EQUAL(content.elements_begin()->type(), tlv::AppendStatusCode);
+      BOOST_CHECK_EQUAL(readNonNegativeInteger(*content.elements_begin()),
+                        static_cast<uint64_t>(tlv::AppendStatus::FAILURE));
+    }, nullptr);
+  BOOST_CHECK_EQUAL(client.m_nonceMap.size(), 1);
+  const uint64_t nonce2 = client.m_nonceMap.begin()->first;
+  auto notification2 = client.makeNotification(Name(identity.getName()).append("append"), nonce2);
+  Data ack2(notification2->getName());
+  ack2.setContent(ndn::makeNonNegativeIntegerBlock(tlv::AppendStatusCode, 
+                  static_cast<uint64_t>(tlv::AppendStatus::FAILURE)));
+  m_keyChain.sign(ack2, ndn::signingByIdentity(identity));
+  client.onNotificationAck(nonce2, ack2);
+  advanceClocks(time::milliseconds(20), 60);
+  BOOST_CHECK_EQUAL(client.m_nonceMap.size(), 0);
+}
 
 BOOST_AUTO_TEST_SUITE_END() // TestCtModule
 

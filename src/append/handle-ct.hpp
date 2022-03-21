@@ -16,7 +16,7 @@ class HandleCt : public Handle
 public:
   explicit
   HandleCt(const ndn::Name& prefix, ndn::Face& face, ndn::KeyChain& keyChain);
-  
+
   void
   listenOnTopic(Name& topic, const UpdateCallback& onUpdateCallback);
 NDNREVOKE_PUBLIC_WITH_TESTS_ELSE_PRIVATE:
