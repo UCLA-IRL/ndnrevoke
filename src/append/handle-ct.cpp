@@ -26,7 +26,7 @@ HandleCt::listenOnTopic(Name& topic, const UpdateCallback& onUpdateCallback)
     auto prefixId = m_face.registerPrefix(m_topic,[&] (const Name& name) {
       // register for each record Zone
       // notice: this only register FIB to Face, not NFD.
-      auto filterId = m_face.setInterestFilter(Name(m_topic).append("notify"), [this] (auto&&, const auto& i) { onNotification(i); });
+      auto filterId = m_face.setInterestFilter(Name(m_topic).append("notify"), [=] (auto&&, const auto& i) { onNotification(i); });
       m_interestFilterHandles.push_back(filterId);
       NDN_LOG_TRACE("Registering filter for notification " << Name(m_topic).append("notify"));
     },
@@ -86,25 +86,28 @@ HandleCt::onCommandData(Data data)
         dataFetcher.setForwardingHint({item->second.dataForwardingHint});
     }
     // ideally we need fill in all three callbacks
-    m_face.expressInterest(dataFetcher, [this, item, content] (auto&&, const auto& i) {
-      NDN_LOG_TRACE("Retrieve data " << i.getName());
-      NDN_LOG_TRACE("New command: [nonce " << item->second.nonce << " ] [dataName " 
-                                            << item->second.dataName << " ]");
-      // acking notification
-      m_face.put(*makeNotificationAck(item->second.interestName, tlv::AppendStatus::SUCCESS));
-      NDN_LOG_TRACE("Putting notification ack");
+    auto interestName = item->second.interestName;
+    m_face.expressInterest(dataFetcher, 
+      [=] (auto&&, const auto& i) {
+        NDN_LOG_TRACE("Retrieve data " << i.getName());
+        NDN_LOG_TRACE("New command: [nonce " << item->second.nonce << " ] [dataName " 
+                                              << item->second.dataName << " ]");
+        // acking notification
+        m_face.put(*makeNotificationAck(interestName, tlv::AppendStatus::SUCCESS));
+        NDN_LOG_TRACE("Putting notification ack");
 
-      // triggering callback
-      m_updateCallback(i);
-    },
-    [this, item] (auto&, auto&) {
-      m_face.put(*makeNotificationAck(item->second.interestName, tlv::AppendStatus::FAILURE_NACK));
-      NDN_LOG_TRACE("Putting notification ack");        
-    }, 
-    [this, item] (auto&) {
-      m_face.put(*makeNotificationAck(item->second.interestName, tlv::AppendStatus::FAILURE_TIMEOUT));
-      NDN_LOG_TRACE("Putting notification ack");        
-    });
+        // triggering callback
+        m_updateCallback(i);
+      },
+      [=] (auto&, auto&) {
+        m_face.put(*makeNotificationAck(interestName, tlv::AppendStatus::FAILURE_NACK));
+        NDN_LOG_TRACE("Putting notification ack");        
+      }, 
+      [=] (auto&) {
+        m_face.put(*makeNotificationAck(interestName, tlv::AppendStatus::FAILURE_TIMEOUT));
+        NDN_LOG_TRACE("Putting notification ack");        
+      }
+    );
   }
   m_nonceMap.erase(nonce);
 }
@@ -112,8 +115,7 @@ HandleCt::onCommandData(Data data)
 std::shared_ptr<Data>
 HandleCt::makeNotificationAck(const Name& notificationName, const tlv::AppendStatus status)
 {
-  auto data = std::make_shared<Data>();
-  data->setName(notificationName);
+  auto data = std::make_shared<Data>(notificationName);
   // acking notification
   data->setContent(ndn::makeNonNegativeIntegerBlock(tlv::AppendStatusCode, static_cast<uint64_t>(status)));
   m_keyChain.sign(*data, ndn::signingByIdentity(m_localPrefix));
