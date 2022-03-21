@@ -112,7 +112,8 @@ HandleCt::onCommandData(Data data)
 std::shared_ptr<Data>
 HandleCt::makeNotificationAck(const Name& notificationName, const tlv::AppendStatus status)
 {
-  auto data = std::make_shared<Data>(notificationName);
+  auto data = std::make_shared<Data>();
+  data->setName(notificationName);
   // acking notification
   data->setContent(ndn::makeNonNegativeIntegerBlock(tlv::AppendStatusCode, static_cast<uint64_t>(status)));
   m_keyChain.sign(*data, ndn::signingByIdentity(m_localPrefix));
