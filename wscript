@@ -25,6 +25,8 @@ def configure(conf):
 
     conf.check_cfg(package='libndn-cxx', args=['--cflags', '--libs'], uselib_store='NDN_CXX',
                    pkg_config_path=os.environ.get('PKG_CONFIG_PATH', '%s/pkgconfig' % conf.env.LIBDIR))
+    conf.check_cfg(package='libcert-ledger', args=['--cflags', '--libs'], uselib_store='CERT_LEDGER',
+                       pkg_config_path=os.environ.get('PKG_CONFIG_PATH', '%s/pkgconfig' % conf.env.LIBDIR))
 
     conf.check_sqlite3()
     conf.check_openssl(lib='crypto', atleast_version='1.1.1')
@@ -63,7 +65,7 @@ def build(bld):
               vnum=VERSION,
               cnum=VERSION,
               source=bld.path.ant_glob('src/**/*.cpp'),
-              use='NDN_CXX BOOST OPENSSL SQLITE3',
+              use='NDN_CXX CERT_LEDGER BOOST OPENSSL SQLITE3',
               includes='src',
               export_includes='src')
 
