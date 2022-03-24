@@ -39,8 +39,9 @@ void CertificateState::updateCertificateState(record::Record& record)
   state::State state(certName, dummyKeyChain);
   state.getRecord(record);
 
+  this->cert.setName(certName);
   this->publicKeyHash = state.m_publicKeyHash;
-    this->record = record;
+  this->record = record;
   if (state.m_revocationTimestamp.has_value()) {
       this->revocationTimestamp = state.m_revocationTimestamp.value();
   }
