@@ -41,7 +41,7 @@ BOOST_AUTO_TEST_CASE(AppendHandleCTNotify)
 
   face.receive(notification);
   advanceClocks(time::milliseconds(20), 60);
-  BOOST_CHECK_EQUAL(handleCt.m_nonceMap.find(nonce)->second.interestName, notification.getName());
+  BOOST_CHECK_EQUAL(handleCt.m_nonceMap.size(), 1);
 }
 
 BOOST_AUTO_TEST_CASE(AppendHandleCTCommand)
@@ -58,10 +58,9 @@ BOOST_AUTO_TEST_CASE(AppendHandleCTCommand)
   HandleCt handleCt(identity.getName(), face, m_keyChain);
 
   auto topic = Name(identity.getName()).append("append");
-  handleCt.listenOnTopic(topic, [](auto i) {
-    auto content = i.getContent();
-    BOOST_CHECK_EQUAL(i.getContent().value_size(), std::strlen("Hello, world!"));
-    BOOST_CHECK(!std::memcmp(i.getContent().value(), "Hello, world!", i.getContent().value_size()));
+  handleCt.listenOnTopic(topic, [&](auto i) {
+    BOOST_CHECK_EQUAL(i.getName(), cert2.getName());
+    BOOST_CHECK_EQUAL(i.getContent().value_size(), cert2.getContent().value_size());
   });
   advanceClocks(time::milliseconds(20), 60);
 
@@ -80,22 +79,19 @@ BOOST_AUTO_TEST_CASE(AppendHandleCTCommand)
 
   // // /ndn/site1/abc/msg/ndn/append/%94U%B3h%3BJ%40%8B
   auto dataName = Name("/abc/d");
-  auto commandName = Name(identity2.getName()).append("msg")
-                                              .append(topic).appendNumber(nonce);
-  Data command(commandName);
-  auto content = appendtlv::encodeAppendContent(dataName);
-  command.setContent(content);
-  command.setFreshnessPeriod(10_s);
-  m_keyChain.sign(command, ndn::signingByIdentity(identity2));
 
-  handleCt.onCommandData(command);
-  advanceClocks(time::milliseconds(20), 60);
+  Interest submissionFetcher(Name(identity2.getName()).append("msg")
+                                           .append(topic).appendNumber(nonce));
+  Data submission(submissionFetcher.getName());
+  Block content(ndn::tlv::Content);
+  content.push_back(cert2.wireEncode());
+  content.encode();
 
-  Data data(dataName);
-  static const std::string str("Hello, world!");
-  data.setContent(reinterpret_cast<const uint8_t*>(str.data()), str.size());
-  m_keyChain.sign(data, ndn::signingByIdentity(identity2));
-  face.receive(data);
+  submission.setContent(content);
+  submission.setFreshnessPeriod(10_s);
+  m_keyChain.sign(submission, ndn::signingByIdentity(identity2));
+
+  handleCt.onSubmissionData(submissionFetcher, submission);
   advanceClocks(time::milliseconds(20), 60);
 }
 
@@ -117,22 +113,17 @@ BOOST_AUTO_TEST_CASE(AppendHandleClient)
   data.setContent(reinterpret_cast<const uint8_t*>(str.data()), str.size());
   m_keyChain.sign(data, ndn::signingByIdentity(identity2));
   BOOST_CHECK_EQUAL(client.m_nonceMap.size(), 0);
-  client.appendData(Name("/ndn/append"), data);
+  client.appendData(Name("/ndn/append"), {data});
   advanceClocks(time::milliseconds(20), 60);
 
   BOOST_CHECK_EQUAL(client.m_nonceMap.size(), 1);
   uint64_t nonce = client.m_nonceMap.begin()->first;
-  Name fetcherName = Name(identity2.getName()).append("msg").append(identity.getName())
-                                              .appendNumber(nonce);
-  Interest commandFetcher(fetcherName);
-  face.receive(commandFetcher);
+  Interest submissionFetcher(Name(identity2.getName()).append("msg").append(identity.getName())
+                                           .appendNumber(nonce));
+  face.receive(submissionFetcher);
   advanceClocks(time::milliseconds(20), 60);
-
-  Interest dataFetcher("/ndn/site1/abc/def");
-  face.receive(dataFetcher);
-  advanceClocks(time::milliseconds(20), 60);
-  // should be erased
-  BOOST_CHECK_EQUAL(client.m_nonceMap.size(), 0);
+  // should not be erased
+  BOOST_CHECK_EQUAL(client.m_nonceMap.size(), 1);
 }
 
 BOOST_AUTO_TEST_CASE(AppendHandleClientStatus)
@@ -150,7 +141,7 @@ BOOST_AUTO_TEST_CASE(AppendHandleClientStatus)
 
   BOOST_CHECK_EQUAL(client.m_nonceMap.size(), 0);
   uint64_t nonce = ndn::random::generateSecureWord64();
-  client.m_nonceMap.insert({nonce, Data()});
+  client.m_nonceMap.insert({nonce, {Data()}});
 
   auto notification = client.makeNotification(Name(identity.getName()).append("append"), nonce);
   Data ack(notification->getName());
@@ -178,8 +169,9 @@ BOOST_AUTO_TEST_CASE(AppendHandleClientCallback)
   static const std::string str("Hello, world!");
   data.setContent(reinterpret_cast<const uint8_t*>(str.data()), str.size());
   m_keyChain.sign(data, ndn::signingByIdentity(identity2));
+  
   BOOST_CHECK_EQUAL(client.m_nonceMap.size(), 0);
-  client.appendData(Name("/ndn/append"), data, 
+  client.appendData(Name("/ndn/append"), {data}, 
     [] (auto& i) {
       Block content = i.getContent();
       content.parse();
@@ -187,7 +179,7 @@ BOOST_AUTO_TEST_CASE(AppendHandleClientCallback)
       BOOST_CHECK_EQUAL(content.elements_begin()->type(), tlv::AppendStatusCode);
       BOOST_CHECK_EQUAL(readNonNegativeInteger(*content.elements_begin()),
                         static_cast<uint64_t>(tlv::AppendStatus::SUCCESS));
-    }, nullptr, nullptr);
+    }, nullptr, nullptr, nullptr);
   advanceClocks(time::milliseconds(20), 60);
 
   BOOST_CHECK_EQUAL(client.m_nonceMap.size(), 1);
@@ -201,7 +193,7 @@ BOOST_AUTO_TEST_CASE(AppendHandleClientCallback)
   advanceClocks(time::milliseconds(20), 60);
   BOOST_CHECK_EQUAL(client.m_nonceMap.size(), 0);
   
-  client.appendData(Name("/ndn/append"), data, nullptr,
+  client.appendData(Name("/ndn/append"), {data}, nullptr,
     [] (auto& i) {
       Block content = i.getContent();
       content.parse();
@@ -209,7 +201,8 @@ BOOST_AUTO_TEST_CASE(AppendHandleClientCallback)
       BOOST_CHECK_EQUAL(content.elements_begin()->type(), tlv::AppendStatusCode);
       BOOST_CHECK_EQUAL(readNonNegativeInteger(*content.elements_begin()),
                         static_cast<uint64_t>(tlv::AppendStatus::FAILURE_NACK));
-    }, nullptr);
+    }, nullptr, nullptr);
+
   BOOST_CHECK_EQUAL(client.m_nonceMap.size(), 1);
   const uint64_t nonce2 = client.m_nonceMap.begin()->first;
   auto notification2 = client.makeNotification(Name(identity.getName()).append("append"), nonce2);

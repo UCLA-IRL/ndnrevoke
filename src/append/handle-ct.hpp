@@ -20,11 +20,15 @@ public:
   void
   listenOnTopic(Name& topic, const UpdateCallback& onUpdateCallback);
 NDNREVOKE_PUBLIC_WITH_TESTS_ELSE_PRIVATE:
+
+  void
+  dispatchInterest(const Interest& interest, uint64_t nonce);
+
   void
   onNotification(Interest interest);
 
   void
-  onCommandData(Data data);
+  onSubmissionData(const Interest& interest, const Data& data);
   
   std::shared_ptr<Data>
   makeNotificationAck(const Name& notificationName, const tlv::AppendStatus status);

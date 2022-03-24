@@ -10,11 +10,10 @@ namespace appendtlv {
 
 struct AppenderInfo {
   Name remotePrefix;
-  Name dataName;
-  Name commandForwardingHint;
-  Name dataForwardingHint;
+  Name forwardingHint;
   Name interestName;
   uint64_t nonce;
+  ssize_t retryCount;
 };
 
 
@@ -23,12 +22,6 @@ encodeAppendParameters(const Name& prefix, const uint64_t nonce, const Name& for
 
 void
 decodeAppendParameters(const Block& params, AppenderInfo& info);
-
-Block
-encodeAppendContent(const Name& dataName, const Name& forwardingHint = Name());
-
-void
-decodeAppendContent(const Block& content, AppenderInfo& info);
 
 } // namespace appendtlv
 } // namespace ndnrevoke

@@ -3,12 +3,17 @@
 #include "append/handle-client.hpp"
 
 #include <ndn-cxx/security/signing-helpers.hpp>
+#include <thread>
+#include <chrono>
+#include <future>
 
 namespace ndnrevoke {
 namespace append { 
 
 NDN_LOG_INIT(ndnrevoke.append);
 
+const ssize_t MAX_RETRIES = 6;
+const uint64_t INVALID_NONCE = (uint64_t)(-1);
 
 HandleClient::HandleClient(const ndn::Name& prefix, ndn::Face& face, ndn::KeyChain& keyChain)
   : Handle(prefix, face, keyChain)
@@ -25,7 +30,7 @@ HandleClient::HandleClient(const ndn::Name& prefix, ndn::Face& face, ndn::KeyCha
       // register for /<prefix>/msg
       auto filterId = m_face.setInterestFilter(Name(m_localPrefix).append("msg"), 
         [this] (auto&&, const auto& i) { 
-          onCommandFetchingInterest(i); 
+          onSubmissionFetchingInterest(i); 
       });
       m_interestFilterHandles.push_back(filterId);
       NDN_LOG_TRACE("Registering filter for " << Name(m_localPrefix).append("msg"));
@@ -38,49 +43,32 @@ HandleClient::HandleClient(const ndn::Name& prefix, ndn::Face& face, ndn::KeyCha
 }
 
 void
-HandleClient::appendData(const ndn::Name& topic, Data& data)
+HandleClient::dispatchNotification(const Interest& interest, const uint64_t nonce)
 {
-  // sanity check
-  if (topic.empty() || data.getName().empty()) {
-    NDN_LOG_ERROR("Empty data or topic, return");
+  if (m_retryCount++ > MAX_RETRIES) {
+    NDN_LOG_ERROR("Running out of retries: " << m_retryCount << " retries");
+    auto iter = m_callback.find(nonce);
+    // no more retransmissions, directly timeout
+    if (iter != m_callback.end()) {
+      iter->second.onTimeout(interest);
+      m_callback.erase(iter);
+    }
     return;
   }
-  const uint64_t nonce = ndn::random::generateSecureWord64();
-  m_nonceMap.insert({nonce, data});
-  auto notification = makeNotification(topic, nonce);
-
-  m_face.expressInterest(*notification, 
-    [this, nonce] (auto&&, const auto& i) { onNotificationAck(nonce, i);}, 
-    nullptr,
-    [this, topic, nonce, notification] (const auto& i) {
+  
+  m_face.expressInterest(interest, 
+    [&] (auto&&, const auto& i) { onNotificationAck(nonce, i);}, 
+    [&] (const auto& i, auto& n) {
       auto iter = m_callback.find(nonce);
-      // currently no retransmission, directly timeout
       if (iter != m_callback.end()) {
-        iter->second.onTimeout(*notification);
+        iter->second.onNack(i, n);
         m_callback.erase(iter);
       }
+    },
+    [&] (const auto& i) {
+      dispatchNotification(interest, nonce);
     }
   );
-}
-
-void
-HandleClient::appendData(const ndn::Name& topic, Data& data, const onSuccessCallback successCb, 
-                         const onFailureCallback failureCb, const onTimeoutCallback timeoutCb)
-{
-  // sanity check
-  if (topic.empty() || data.getName().empty()) {
-    NDN_LOG_ERROR("Empty data or topic, return");
-    return;
-  }
-  uint64_t nonce = ndn::random::generateSecureWord64();
-  m_nonceMap.insert({nonce, data});
-
-  // insert to callback map
-  m_callback.insert({nonce, {successCb, failureCb, timeoutCb}});
-  makeNotification(topic, nonce);
-  m_face.expressInterest(*makeNotification(topic, nonce), 
-    [this, nonce] (auto&&, const auto& i) { onNotificationAck(nonce, i);}, 
-    nullptr, nullptr);
 }
 
 std::shared_ptr<Interest>
@@ -93,9 +81,39 @@ HandleClient::makeNotification(const ndn::Name& topic, uint64_t nonce)
   return notification;
 }
 
+uint64_t
+HandleClient::appendData(const ndn::Name& topic, std::list<Data> data)
+{
+  // sanity check
+  if (topic.empty() || data.size() == 0 || 
+      data.front().getName().empty()) {
+    NDN_LOG_ERROR("Empty data or topic, return");
+    return INVALID_NONCE;
+  }
+  const uint64_t nonce = ndn::random::generateSecureWord64();
+  m_nonceMap.insert({nonce, data});
+  auto notification = makeNotification(topic, nonce);
+  dispatchNotification(*notification, nonce);
+  return nonce;
+}
+
+uint64_t
+HandleClient::appendData(const ndn::Name& topic, std::list<Data> data, const onSuccessCallback successCb, 
+                         const onFailureCallback failureCb, const onTimeoutCallback timeoutCb, const onNackCallback nackCb)
+{
+  uint64_t nonce = appendData(topic, data);
+  if (nonce != INVALID_NONCE) {
+    m_callback.insert({nonce, {successCb, failureCb, timeoutCb, nackCb}});
+  }
+  return nonce;
+}
+
 void
 HandleClient::onNotificationAck(const uint64_t nonce, const Data& data)
 {
+  // reset retryCount
+  m_retryCount = 0;
+
   auto content = data.getContent();
   content.parse();
   tlv::AppendStatus status = tlv::AppendStatus::NOTINITIALIZED;
@@ -104,7 +122,7 @@ HandleClient::onNotificationAck(const uint64_t nonce, const Data& data)
   if (m_nonceMap.find(nonce) != m_nonceMap.end()) {
     m_nonceMap.erase(nonce);
   }
-  else {
+  else { 
     NDN_LOG_ERROR("Unrecognized nonce " << nonce << ", abort");
     return;
   }
@@ -151,7 +169,7 @@ HandleClient::onNotificationAck(const uint64_t nonce, const Data& data)
 }
 
 void
-HandleClient::onCommandFetchingInterest(const Interest& interest)
+HandleClient::onSubmissionFetchingInterest(const Interest& interest)
 {
   // Interest: /<m_prefix>/msg/<topic>/<nonce>
   // <topic> should be /<ct-prefix>/append
@@ -163,30 +181,19 @@ HandleClient::onCommandFetchingInterest(const Interest& interest)
   auto iter = m_nonceMap.find(nonce);
   if (iter != m_nonceMap.end()) {
     // putting back
-    Data command(interest.getName());
-    auto content = appendtlv::encodeAppendContent(iter->second.getName(), m_forwardingHint);
-    command.setContent(content);
-    m_keyChain.sign(command, ndn::signingByIdentity(m_localPrefix));
-    m_face.put(command);
-    
-    // register for actual data fetching interest
-    NDN_LOG_TRACE("Setting Interest filter for " << iter->second.getName());
-    auto prefixId = m_face.setInterestFilter(ndn::InterestFilter(iter->second.getName()), 
-      [this, nonce] (auto&&, const auto& interest) {
-        auto iter = m_nonceMap.find(nonce);
-        if (iter != m_nonceMap.end()) {
-          m_face.put(iter->second);
-          m_nonceMap.erase(nonce);
-        }
-        else {
-          NDN_LOG_DEBUG("So data for nonce " << nonce);
-        }
-      },
-      [&] (auto&&, const auto& reason) {
-        NDN_LOG_ERROR("Failed to register prefix in local hub's daemon, REASON: " << reason);
-      }
-    );
-    m_registeredPrefixHandles.push_back(prefixId);    
+    int dataCount = 0;
+    Block content(ndn::tlv::Content);
+    for (auto& item : iter->second) {
+      dataCount++;
+      content.push_back(item.wireEncode());
+    }
+    content.encode();
+
+    NDN_LOG_TRACE("Putting " << std::to_string(dataCount) << " Data into submission");
+    Data submission;
+    submission.setContent(content);
+    m_keyChain.sign(submission, ndn::signingByIdentity(m_localPrefix));
+    m_face.put(submission);
   }
   else {
     NDN_LOG_DEBUG("Unrecognized nonce " << nonce);

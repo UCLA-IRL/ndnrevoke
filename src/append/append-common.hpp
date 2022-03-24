@@ -29,9 +29,10 @@ enum : uint32_t {
   AppenderNonce = 262
 };
 
-// command
+// submission
 enum : uint32_t {
-  AppenderDataName = 261,
+  AppendCert = 261,
+  AppendRecord = 261,
 };
 
 enum : uint32_t {
@@ -44,6 +45,7 @@ enum class AppendStatus : uint64_t {
   SUCCESS = 0,
   FAILURE_NACK = 1,
   FAILURE_TIMEOUT = 2,
+  FAILURE_VALIDATION = 2,
   NOTINITIALIZED = 99,
 };
 

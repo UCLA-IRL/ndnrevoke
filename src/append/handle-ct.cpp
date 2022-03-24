@@ -8,9 +8,55 @@ namespace append {
 
 NDN_LOG_INIT(ndnrevoke.append);
 
+
+const ssize_t MAX_RETRIES = 2;
+const ssize_t INVALID_NONCE = -1;
+
 HandleCt::HandleCt(const ndn::Name& prefix, ndn::Face& face, ndn::KeyChain& keyChain)
   : Handle(prefix, face, keyChain)
 {
+}
+
+std::shared_ptr<Data>
+HandleCt::makeNotificationAck(const Name& notificationName, const tlv::AppendStatus status)
+{
+  auto data = std::make_shared<Data>(notificationName);
+  // acking notification
+  data->setContent(ndn::makeNonNegativeIntegerBlock(tlv::AppendStatusCode, static_cast<uint64_t>(status)));
+  m_keyChain.sign(*data, ndn::signingByIdentity(m_localPrefix));
+  return data;
+}
+
+void
+HandleCt::dispatchInterest(const Interest& interest, const uint64_t nonce)
+{
+  auto item = m_nonceMap.find(nonce);
+  if (item == m_nonceMap.end()) {
+    return;
+  }
+
+  if (item->second.retryCount++ > MAX_RETRIES) {
+    NDN_LOG_ERROR("Running out of retries: " << item->second.retryCount << " retries");
+    // acking notification
+    m_face.put(*makeNotificationAck(interest.getName(), tlv::AppendStatus::FAILURE_TIMEOUT));
+    NDN_LOG_TRACE("Putting notification ack");
+    m_nonceMap.erase(nonce);
+    return;
+  }
+  
+  m_face.expressInterest(interest, 
+    [&] (auto& i, const auto& d) { onSubmissionData(i, d);},
+    [&] (const auto& i, auto& n) {
+      // acking notification
+      m_face.put(*makeNotificationAck(interest.getName(), tlv::AppendStatus::FAILURE_NACK));
+      NDN_LOG_TRACE("Putting notification ack");
+      m_nonceMap.erase(nonce);
+    },
+    [&] (const auto& i) {
+      NDN_LOG_TRACE("Retry");
+      dispatchInterest(interest, nonce);
+    }
+  );
 }
 
 void
@@ -46,22 +92,22 @@ HandleCt::onNotification(Interest interest)
   appendtlv::decodeAppendParameters(interest.getApplicationParameters(), info);
   NDN_LOG_TRACE("New notification: [nonce " << info.nonce << " ] [remotePrefix " << info.remotePrefix << " ]");
   info.interestName = interest.getName();
+  info.retryCount = 0;
   m_nonceMap.insert({info.nonce, info});
 
   // send interst: /<remotePrefix>/msg/<topic>/<nonce>
-  Interest commandFetcher(Name(info.remotePrefix).append("msg").append(m_topic)
-                                                 .appendNumber(info.nonce));
-  if (!info.commandForwardingHint.empty()) {
-    commandFetcher.setForwardingHint({info.commandForwardingHint});
+  Interest submissionFetcher(Name(info.remotePrefix).append("msg").append(m_topic)
+                                                    .appendNumber(info.nonce));
+  if (!info.forwardingHint.empty()) {
+    submissionFetcher.setForwardingHint({info.forwardingHint});
   }
 
   // ideally we need fill in all three callbacks
-  commandFetcher.setCanBePrefix(false);
-  m_face.expressInterest(commandFetcher, [this] (auto&&, const auto& i) { onCommandData(i); }, nullptr, nullptr);
+  dispatchInterest(submissionFetcher, info.nonce);
 }
 
 void
-HandleCt::onCommandData(Data data)
+HandleCt::onSubmissionData(const Interest& interest, const Data& data)
 {
   // /ndn/site1/abc/msg/ndn/append/%29%40%87u%89%F9%8D%E4
   auto content = data.getContent();
@@ -70,56 +116,31 @@ HandleCt::onCommandData(Data data)
   auto item = m_nonceMap.find(nonce);
 
   if (item != m_nonceMap.end()) {
-    // fetch the actual data
-    appendtlv::decodeAppendContent(content, item->second);
-    Interest dataFetcher;
-    
-    if (!item->second.dataName.empty()) {
-      dataFetcher.setName(item->second.dataName);
-    }
-    else {
-      NDN_LOG_ERROR("No corresponding notification available, return");
-      return;
-    }
-
-    if (!item->second.dataForwardingHint.empty()) {
-        dataFetcher.setForwardingHint({item->second.dataForwardingHint});
-    }
-    // ideally we need fill in all three callbacks
-    auto interestName = item->second.interestName;
-    m_face.expressInterest(dataFetcher, 
-      [=] (auto&&, const auto& i) {
-        NDN_LOG_TRACE("Retrieve data " << i.getName());
-        NDN_LOG_TRACE("New command: [nonce " << item->second.nonce << " ] [dataName " 
-                                              << item->second.dataName << " ]");
-        // acking notification
-        m_face.put(*makeNotificationAck(interestName, tlv::AppendStatus::SUCCESS));
-        NDN_LOG_TRACE("Putting notification ack");
-
-        // triggering callback
-        m_updateCallback(i);
-      },
-      [=] (auto&, auto&) {
-        m_face.put(*makeNotificationAck(interestName, tlv::AppendStatus::FAILURE_NACK));
-        NDN_LOG_TRACE("Putting notification ack");        
-      }, 
-      [=] (auto&) {
-        m_face.put(*makeNotificationAck(interestName, tlv::AppendStatus::FAILURE_TIMEOUT));
-        NDN_LOG_TRACE("Putting notification ack");        
+    item->second.retryCount = 0;
+    content.parse();
+    for (const auto &item : content.elements()) {
+      switch (item.type()) {
+        case ndn::tlv::Data:
+          // ideally we should run validator here
+          m_updateCallback(Data(item));
+          break;
+        default:
+          if (ndn::tlv::isCriticalType(item.type())) {
+            NDN_THROW(std::runtime_error("Unrecognized TLV Type: " + std::to_string(item.type())));
+          }
+          else {
+            //ignore
+          }
+          break;
       }
-    );
+    }
+
+    // acking notification
+    m_face.put(*makeNotificationAck(interest.getName(), tlv::AppendStatus::SUCCESS));
+    NDN_LOG_TRACE("Putting notification ack");
+    m_nonceMap.erase(nonce);
   }
-  m_nonceMap.erase(nonce);
 }
 
-std::shared_ptr<Data>
-HandleCt::makeNotificationAck(const Name& notificationName, const tlv::AppendStatus status)
-{
-  auto data = std::make_shared<Data>(notificationName);
-  // acking notification
-  data->setContent(ndn::makeNonNegativeIntegerBlock(tlv::AppendStatusCode, static_cast<uint64_t>(status)));
-  m_keyChain.sign(*data, ndn::signingByIdentity(m_localPrefix));
-  return data;
-}
 } // namespace append
 } // namespace ndnrevoke

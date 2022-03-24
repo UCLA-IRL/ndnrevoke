@@ -13,11 +13,13 @@ namespace append {
 using onSuccessCallback = std::function<void(const Data&)>; // notification ack
 using onFailureCallback = std::function<void(const Data&)>; // notification ack
 using onTimeoutCallback = std::function<void(const Interest&)>; // notification interest
+using onNackCallback = std::function<void(const Interest&, const ndn::lp::Nack& nack)>; // nack
 
 struct AppendCallBack {
   onSuccessCallback onSuccess;
   onFailureCallback onFailure;
   onTimeoutCallback onTimeout;
+  onNackCallback onNack;
 };
 
 class HandleClient : public Handle
@@ -26,12 +28,12 @@ public:
   explicit
   HandleClient(const ndn::Name& prefix, ndn::Face& face, ndn::KeyChain& keyChain);
 
-  void
-  appendData(const ndn::Name& topic, Data& data);
+  uint64_t
+  appendData(const ndn::Name& topic, std::list<Data> data);
 
-  void
-  appendData(const ndn::Name& topic, Data& data, const onSuccessCallback successCb, 
-             const onFailureCallback failureCb, const onTimeoutCallback timeoutCb);
+  uint64_t
+  appendData(const ndn::Name& topic, std::list<Data> data, const onSuccessCallback successCb, 
+             const onFailureCallback failureCb, const onTimeoutCallback timeoutCb, const onNackCallback nackCb);
 
   void
   setForwardingHint(const Name& forwardingHint)
@@ -40,6 +42,8 @@ public:
   }
   
 NDNREVOKE_PUBLIC_WITH_TESTS_ELSE_PRIVATE:
+  void
+  dispatchNotification(const Interest& interest, uint64_t nonce);
 
   std::shared_ptr<Interest>
   makeNotification(const ndn::Name& topic, uint64_t nonce);
@@ -51,12 +55,14 @@ NDNREVOKE_PUBLIC_WITH_TESTS_ELSE_PRIVATE:
   onDataFetchingInterest(const ndn::InterestFilter&, const Interest& interest);
 
   void
-  onCommandFetchingInterest(const Interest& interest);
+  onSubmissionFetchingInterest(const Interest& interest);
 
 NDNREVOKE_PUBLIC_WITH_TESTS_ELSE_PRIVATE:
   Name m_forwardingHint;
-  std::map<uint64_t, Data> m_nonceMap;
-  std::map<uint64_t, AppendCallBack> m_callback;
+  // this number is shared by all append operations, and reset each time receving notification ack
+  ssize_t m_retryCount = 0;
+  std::unordered_map<uint64_t, std::list<Data>> m_nonceMap;
+  std::unordered_map<uint64_t, AppendCallBack> m_callback;
 };
 
 } // namespace append
