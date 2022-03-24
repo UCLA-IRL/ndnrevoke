@@ -99,12 +99,13 @@ CtModule::onSubmission(const Interest& submission)
   else if (submissionType == "record") {
     auto paramBlock = submission.getApplicationParameters().blockFromValue();
     record::Record record(paramBlock);
-    auto certState = makeCertificateState(record);
+    auto certState = m_storage->getCertificateState(record.getCertificateName(record.getName()));
+    certState.updateCertificateState(record);
     try {
-      m_storage->addCertificateState(*certState);
+      m_storage->addCertificateState(certState);
     }
     catch (const std::exception& e) {
-      m_storage->updateCertificateState(*certState);
+      m_storage->updateCertificateState(certState);
     }
   }
   else {
@@ -165,7 +166,7 @@ std::shared_ptr<nack::Nack>
 CtModule::prepareNack(const CertificateState& certState, Name::Component publisherId, 
                       ndn::time::milliseconds freshnessPeriod)
 {
-  state::State state(certState.certName, m_keyChain);
+  state::State state(certState.cert.getName(), m_keyChain);
   // currently we only have one nack code
   state.setNackCode(tlv::NackCode::NOT_REVOKED);
   state.setPublisher(publisherId);

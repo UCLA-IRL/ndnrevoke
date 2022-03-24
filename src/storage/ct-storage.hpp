@@ -59,13 +59,13 @@ private:
   getFactory();
 };
 
-#define NDNREVOKE_REGISTER_CT_STORAGE(C)                           \
-static class NdnRevoke ## C ## CtStorageRegistrationClass          \
+#define NDNREVOKE_REGISTER_CT_STORAGE(C)                         \
+static class NdnRevoke ## C ## CtStorageRegistrationClass        \
 {                                                                \
 public:                                                          \
-  NdnRevoke ## C ## CtStorageRegistrationClass()                   \
+  NdnRevoke ## C ## CtStorageRegistrationClass()                 \
   {                                                              \
-    ::ndnrevoke::ct::CtStorage::registerCtStorage<C>();            \
+    ::ndnrevoke::ct::CtStorage::registerCtStorage<C>();          \
   }                                                              \
 } g_NdnRevoke ## C ## CtStorageRegistrationVariable
 
