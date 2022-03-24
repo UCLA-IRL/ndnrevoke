@@ -29,11 +29,7 @@ statusFromBlock(const Block& block);
 
 namespace ct {
 
-/**
- * @brief Represents a certificate request instance kept by the CA.
- *
- * ChallengeModule should take use of RequestState.ChallengeState to keep the challenge state.
- */
+
 struct CertificateState
 {
     void updateCertificateState(record::Record& record);

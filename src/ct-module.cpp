@@ -99,13 +99,14 @@ CtModule::onSubmission(const Interest& submission)
   else if (submissionType == "record") {
     auto paramBlock = submission.getApplicationParameters().blockFromValue();
     record::Record record(paramBlock);
-    auto certState = m_storage->getCertificateState(record.getCertificateName(record.getName()));
-    certState.updateCertificateState(record);
+    CertificateState certState;
     try {
-      m_storage->addCertificateState(certState);
+      certState = m_storage->getCertificateState(record.getCertificateName(record.getName()));
+      m_storage->updateCertificateState(certState);
     }
     catch (const std::exception& e) {
-      m_storage->updateCertificateState(certState);
+      certState.updateCertificateState(record);
+      m_storage->addCertificateState(certState);
     }
   }
   else {
