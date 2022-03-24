@@ -24,5 +24,16 @@ Record::Record(const Block& block)
 {
 }
 
+Name Record::getRevocationRecordPrefix(Name certName) {
+    certName.set(REVOKE_OFFSET, Name::Component("REVOKE"));
+    return certName;
+}
+
+Name Record::getCertificateName(Name revocationName) {
+    revocationName.set(REVOKE_OFFSET, Name::Component("KEY"));
+    revocationName.erase(record::Record::PUBLISHER_OFFSET);
+    return revocationName;
+}
+
 } // namespace record
 } // namespace ndnrevoke

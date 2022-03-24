@@ -1,4 +1,4 @@
-#include "ct-memory.hpp"
+#include "storage/ct-memory.hpp"
 #include "test-common.hpp"
 
 namespace ndnrevoke {
@@ -20,7 +20,7 @@ BOOST_AUTO_TEST_CASE(CertificateStateOperations)
   CertificateState state1;
   state1.ctPrefix = Name("/ndn/ct1");
   state1.status = CertificateStatus::VALID_CERTIFICATE;
-  state1.certName = cert1.getName();
+  state1.cert = cert1;
   state1.publisherId = Name::Component("self");
   state1.reasonCode = tlv::ReasonCode::INVALID;
   auto buf = Sha256::computeDigest(cert1.getPublicKey());
@@ -30,7 +30,7 @@ BOOST_AUTO_TEST_CASE(CertificateStateOperations)
 
   // get operation
   auto result = storage.getCertificateState(cert1.getName());
-  BOOST_CHECK_EQUAL(state1.certName, result.certName);
+  BOOST_CHECK_EQUAL(state1.cert, result.cert);
   BOOST_CHECK(state1.status == result.status);
   BOOST_CHECK_EQUAL(state1.ctPrefix, result.ctPrefix);
   BOOST_CHECK_EQUAL_COLLECTIONS(state1.publicKeyHash.begin(), state1.publicKeyHash.end(),
@@ -40,7 +40,7 @@ BOOST_AUTO_TEST_CASE(CertificateStateOperations)
   CertificateState state2;
   state2.ctPrefix = Name("/ndn/ct1");
   state2.status = CertificateStatus::REVOKED_CERTIFICATE;
-  state2.certName = cert1.getName();
+  state2.cert = cert1;
   state2.publisherId = Name::Component("self");
   state2.reasonCode = tlv::ReasonCode::SUPERSEDED;
   state2.publicKeyHash.assign(buf->begin(), buf->end());
@@ -57,7 +57,7 @@ BOOST_AUTO_TEST_CASE(CertificateStateOperations)
   CertificateState state3;
   state3.ctPrefix = Name("/ndn/ct2");
   state3.status = CertificateStatus::REVOKED_CERTIFICATE;
-  state3.certName = cert2.getName();
+  state3.cert = cert2;
   state3.publisherId = Name::Component("self");
   state2.reasonCode = tlv::ReasonCode::SUPERSEDED;
   auto buf2 = Sha256::computeDigest(cert2.getPublicKey());

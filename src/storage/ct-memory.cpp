@@ -28,12 +28,12 @@ void
 CtMemory::addCertificateState(const CertificateState& state)
 {
   NDN_LOG_TRACE("Adding CertificateState:\n" << state);
-  auto search = m_certStates.find(state.certName.toUri());
+  auto search = m_certStates.find(state.cert.getName().toUri());
   if (search == m_certStates.end()) {
-    m_certStates.insert(std::make_pair(state.certName.toUri(), state));
+    m_certStates.insert(std::make_pair(state.cert.getName().toUri(), state));
   }
   else {
-    NDN_THROW(std::runtime_error("Certificate State " + state.certName.toUri() +
+    NDN_THROW(std::runtime_error("Certificate State " + state.cert.getName().toUri() +
                                  " already exists"));
   }
 }
@@ -41,9 +41,9 @@ CtMemory::addCertificateState(const CertificateState& state)
 void
 CtMemory::updateCertificateState(const CertificateState& state)
 {
-  auto search = m_certStates.find(state.certName.toUri());
+  auto search = m_certStates.find(state.cert.getName().toUri());
   if (search == m_certStates.end()) {
-    m_certStates.insert(std::make_pair(state.certName.toUri(), state));
+    m_certStates.insert(std::make_pair(state.cert.getName().toUri(), state));
   }
   else {
     search->second = state;
