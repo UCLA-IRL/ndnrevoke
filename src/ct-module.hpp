@@ -1,7 +1,7 @@
 #ifndef NDNREVOKE_CT_MODULE_HPP
 #define NDNREVOKE_CT_MODULE_HPP
 
-#include "ct-storage.hpp"
+#include "storage/ct-storage.hpp"
 #include "ct-configuration.hpp"
 #include "nack.hpp"
 

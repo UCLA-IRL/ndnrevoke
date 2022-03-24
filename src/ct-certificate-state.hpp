@@ -36,10 +36,11 @@ namespace ct {
  */
 struct CertificateState
 {
+    void updateCertificateState(record::Record& record);
   /**
    * @brief The certificate name regarding the revocation.
    */
-  Name certName; // used as primary key (when needed)
+  ndn::security::Certificate cert; // name used as primary key (when needed)
   /**
    * @brief The CT that the state is under.
    */
@@ -68,9 +69,6 @@ struct CertificateState
   // should have a revocation record if the certificate is revoked
   record::Record record;
 };
-
-std::shared_ptr<CertificateState>
-makeCertificateState(record::Record& record);
 
 std::shared_ptr<CertificateState>
 makeCertificateState(Certificate& cert);

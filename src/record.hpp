@@ -34,6 +34,9 @@ public:
   // /<prefix>/REVOKE/<keyid>/<issuer>/<version>/<publisher>
   static const ssize_t PUBLISHER_OFFSET;
   static const ssize_t REVOKE_OFFSET;
+
+  static Name getRevocationRecordPrefix(Name certName);
+  static Name getCertificateName(Name revocationName);
 };
 
 } // namespace record
