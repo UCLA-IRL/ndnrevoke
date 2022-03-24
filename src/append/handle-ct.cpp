@@ -10,7 +10,6 @@ NDN_LOG_INIT(ndnrevoke.append);
 
 
 const ssize_t MAX_RETRIES = 2;
-const ssize_t INVALID_NONCE = -1;
 
 HandleCt::HandleCt(const ndn::Name& prefix, ndn::Face& face, ndn::KeyChain& keyChain)
   : Handle(prefix, face, keyChain)
