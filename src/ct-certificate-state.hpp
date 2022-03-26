@@ -67,7 +67,7 @@ struct CertificateState
 };
 
 std::shared_ptr<CertificateState>
-makeCertificateState(Certificate& cert);
+makeCertificateState(const Certificate& cert);
 
 std::ostream&
 operator<<(std::ostream& os, const CertificateState& state);
