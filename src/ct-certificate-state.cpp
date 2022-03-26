@@ -58,7 +58,7 @@ void CertificateState::updateCertificateState(record::Record& record)
 }
 
 std::shared_ptr<CertificateState>
-makeCertificateState(Certificate& cert)
+makeCertificateState(const Certificate& cert)
 {
   ndn::KeyChain dummyKeyChain;
   state::State state(cert, dummyKeyChain);

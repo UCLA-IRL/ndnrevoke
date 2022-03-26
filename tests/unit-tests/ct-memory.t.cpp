@@ -59,7 +59,7 @@ BOOST_AUTO_TEST_CASE(CertificateStateOperations)
   state3.status = CertificateStatus::REVOKED_CERTIFICATE;
   state3.cert = cert2;
   state3.publisherId = Name::Component("self");
-  state2.reasonCode = tlv::ReasonCode::SUPERSEDED;
+  state3.reasonCode = tlv::ReasonCode::SUPERSEDED;
   auto buf2 = Sha256::computeDigest(cert2.getPublicKey());
   state3.publicKeyHash.assign(buf2->begin(), buf2->end());
   storage.addCertificateState(state3);

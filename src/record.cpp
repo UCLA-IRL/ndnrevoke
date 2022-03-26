@@ -25,7 +25,7 @@ Record::Record(const Block& block)
 }
 
 Name Record::getRevocationRecordPrefix(Name certName) {
-    certName.set(REVOKE_OFFSET, Name::Component("REVOKE"));
+    certName.set(REVOKE_OFFSET + 1, Name::Component("REVOKE"));
     return certName;
 }
 
