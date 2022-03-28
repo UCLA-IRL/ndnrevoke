@@ -48,6 +48,7 @@ CtMemory::updateCertificateState(const CertificateState& state)
   else {
     search->second = state;
   }
+  NDN_LOG_TRACE("Updating CertificateState:\n" << state);
 }
 
 void

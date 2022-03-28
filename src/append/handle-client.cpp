@@ -116,7 +116,6 @@ HandleClient::onNotificationAck(const uint64_t nonce, const Data& data)
 
   auto content = data.getContent();
   content.parse();
-  tlv::AppendStatus status = tlv::AppendStatus::NOTINITIALIZED;
   
   // sanity check
   if (m_nonceMap.find(nonce) != m_nonceMap.end()) {
@@ -127,11 +126,12 @@ HandleClient::onNotificationAck(const uint64_t nonce, const Data& data)
     return;
   }
 
+  std::list<uint64_t> statusList;
   auto iter = m_callback.find(nonce);
   for (const auto &item : content.elements()) {
     switch (item.type()) {
       case tlv::AppendStatusCode:
-        status = static_cast<tlv::AppendStatus>(readNonNegativeInteger(item));
+        statusList.push_back(readNonNegativeInteger(item));
         break;
       default:
         if (ndn::tlv::isCriticalType(item.type())) {
@@ -143,30 +143,25 @@ HandleClient::onNotificationAck(const uint64_t nonce, const Data& data)
         break;
     }
   }
-  switch (status) {
-    case tlv::AppendStatus::SUCCESS:
-      NDN_LOG_TRACE("Append succeeded\n");
-      if (iter != m_callback.end()) {
-        iter->second.onSuccess(data);
-        m_callback.erase(iter);
-      }
-      break;
-    case tlv::AppendStatus::NOTINITIALIZED:
-      NDN_LOG_ERROR("Not initialized certificate state\n");
-    case tlv::AppendStatus::FAILURE_VALIDATION:
-      NDN_LOG_ERROR("Submission validation failed\n");
-    case tlv::AppendStatus::FAILURE_NACK:
-    case tlv::AppendStatus::FAILURE_TIMEOUT:
-    case tlv::AppendStatus::FAILURE_NX_CERT:
-      NDN_LOG_TRACE("Append failed\n");
+
+  // if all success, onSuccess; otherwise, failure
+  for (auto& status: statusList) {
+    if (static_cast<tlv::AppendStatus>(status) == tlv::AppendStatus::SUCCESS) {
+      continue;
+    }
+    else {
+      NDN_LOG_TRACE("Not all succeeded\n");
       if (iter != m_callback.end()) {
         iter->second.onFailure(data);
         m_callback.erase(iter);
+        return;
       }
-      break;
-    default:
-      NDN_LOG_TRACE("Unrecognized status code: " << static_cast<uint64_t>(status));
-      break;
+    }
+  }
+  NDN_LOG_TRACE("All succeeded\n");
+  if (iter != m_callback.end()) {
+    iter->second.onSuccess(data);
+    m_callback.erase(iter);
   }
 }
 

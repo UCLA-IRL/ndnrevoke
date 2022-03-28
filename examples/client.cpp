@@ -54,22 +54,57 @@ main(int argc, char* argv[])
 
   append::HandleClient client(identity.getName(), face, keyChain);
 
-  // scheduled after prefix registeration
+  // scheduled record appending after prefix registeration
+  // this shall fail with FAILURE_NX_CERT.
+  // because the cert data must be appended before the revocation record
   scheduler.schedule(CHECKOUT_INTERVAL, [&] {
     state::State state(cert, keyChain);
     state.setRevocationReason(tlv::ReasonCode::SUPERSEDED);
     auto record = state.genOwnerRecord(key.getName());
     client.appendData(Name("/ndn/append"), {*record}, nullptr,
         [] (auto& i) {
-        Block content = i.getContent();
-        content.parse();
+          Block content = i.getContent();
+          content.parse();
 
-        if (content.elements_size() != 1) {
-          NDN_LOG_DEBUG("Not as expected");
-        }
-        uint64_t status = readNonNegativeInteger(*content.elements_begin());
-        NDN_LOG_INFO("Append status: " << append::statusToString(static_cast<tlv::AppendStatus>(status)));
+          if (content.elements_size() != 1) {
+            NDN_LOG_DEBUG("Elements size not as expected");
+            return;
+          }
+          uint64_t status = readNonNegativeInteger(*content.elements_begin());
+          if (static_cast<tlv::AppendStatus>(status) == tlv::AppendStatus::FAILURE_NX_CERT) {
+            NDN_LOG_DEBUG("Failed as expected");
+          }
+          else {
+            NDN_LOG_INFO("Failed or succeeded not as expected");
+          }
+          NDN_LOG_INFO("Append status: " << append::statusToString(static_cast<tlv::AppendStatus>(status)));
         }, nullptr, nullptr
+    );
+   }
+  );
+
+  scheduler.schedule(CHECKOUT_INTERVAL, [&] {
+    state::State state(cert, keyChain);
+    state.setRevocationReason(tlv::ReasonCode::SUPERSEDED);
+    auto record = state.genOwnerRecord(key.getName());
+    client.appendData(Name("/ndn/append"), {cert, *record},
+        [] (auto& i) {
+          Block content = i.getContent();
+          content.parse();
+
+          if (content.elements_size() != 2) {
+            NDN_LOG_DEBUG("Elements size not as expected");
+            return;
+          }
+
+          ssize_t count = 0;
+          for (auto& iter: content.elements()) {
+            uint64_t status = readNonNegativeInteger(iter);
+            NDN_LOG_INFO("Append status for data " << count << ": " 
+                          << append::statusToString(static_cast<tlv::AppendStatus>(status)));
+            count++;
+          }
+        }, nullptr, nullptr, nullptr
     );
    }
   );

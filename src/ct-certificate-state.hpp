@@ -32,7 +32,6 @@ namespace ct {
 
 struct CertificateState
 {
-    void updateCertificateState(record::Record& record);
   /**
    * @brief The certificate name regarding the revocation.
    */
@@ -64,6 +63,8 @@ struct CertificateState
 
   // should have a revocation record if the certificate is revoked
   record::Record record;
+
+  void updateCertificateState(record::Record& record);
 };
 
 std::shared_ptr<CertificateState>

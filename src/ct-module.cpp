@@ -97,7 +97,9 @@ CtModule::onDataSubmission(const Data& data)
     CertificateState certState;
     try {
       certState = m_storage->getCertificateState(record.getCertificateName(record.getName()));
+      certState.updateCertificateState(record);
       m_storage->updateCertificateState(certState);
+      return tlv::AppendStatus::SUCCESS;
     }
     catch (const std::exception& e) {
       return tlv::AppendStatus::FAILURE_NX_CERT;
