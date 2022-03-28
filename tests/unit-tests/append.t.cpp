@@ -58,9 +58,10 @@ BOOST_AUTO_TEST_CASE(AppendHandleCTCommand)
   HandleCt handleCt(identity.getName(), face, m_keyChain);
 
   auto topic = Name(identity.getName()).append("append");
-  handleCt.listenOnTopic(topic, [&](auto i) {
+  handleCt.listenOnTopic(topic, [&] (auto i) -> tlv::AppendStatus {
     BOOST_CHECK_EQUAL(i.getName(), cert2.getName());
     BOOST_CHECK_EQUAL(i.getContent().value_size(), cert2.getContent().value_size());
+    return tlv::AppendStatus::SUCCESS;
   });
   advanceClocks(time::milliseconds(20), 60);
 

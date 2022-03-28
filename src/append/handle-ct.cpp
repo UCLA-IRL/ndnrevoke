@@ -17,11 +17,17 @@ HandleCt::HandleCt(const ndn::Name& prefix, ndn::Face& face, ndn::KeyChain& keyC
 }
 
 std::shared_ptr<Data>
-HandleCt::makeNotificationAck(const Name& notificationName, const tlv::AppendStatus status)
+HandleCt::makeNotificationAck(const Name& notificationName, const std::list<tlv::AppendStatus> statusList)
 {
   auto data = std::make_shared<Data>(notificationName);
   // acking notification
-  data->setContent(ndn::makeNonNegativeIntegerBlock(tlv::AppendStatusCode, static_cast<uint64_t>(status)));
+  Block content(ndn::tlv::Content);
+  for (auto& status : statusList) {
+    // can use bitmap to optimize, but later
+    content.push_back(ndn::makeNonNegativeIntegerBlock(tlv::AppendStatusCode, static_cast<uint64_t>(status)));
+  }
+  content.encode();
+  data->setContent(content);
   m_keyChain.sign(*data, ndn::signingByIdentity(m_localPrefix));
   return data;
 }
@@ -37,7 +43,7 @@ HandleCt::dispatchInterest(const Interest& interest, const uint64_t nonce)
   if (item->second.retryCount++ > MAX_RETRIES) {
     NDN_LOG_ERROR("Running out of retries: " << item->second.retryCount << " retries");
     // acking notification
-    m_face.put(*makeNotificationAck(interest.getName(), tlv::AppendStatus::FAILURE_TIMEOUT));
+    m_face.put(*makeNotificationAck(interest.getName(), {tlv::AppendStatus::FAILURE_TIMEOUT}));
     NDN_LOG_TRACE("Putting notification ack");
     m_nonceMap.erase(nonce);
     return;
@@ -47,7 +53,7 @@ HandleCt::dispatchInterest(const Interest& interest, const uint64_t nonce)
     [&] (auto& i, const auto& d) { onSubmissionData(i, d);},
     [&] (const auto& i, auto& n) {
       // acking notification
-      m_face.put(*makeNotificationAck(interest.getName(), tlv::AppendStatus::FAILURE_NACK));
+      m_face.put(*makeNotificationAck(interest.getName(), {tlv::AppendStatus::FAILURE_NACK}));
       NDN_LOG_TRACE("Putting notification ack");
       m_nonceMap.erase(nonce);
     },
@@ -114,6 +120,7 @@ HandleCt::onSubmissionData(const Interest& interest, const Data& data)
   const uint64_t nonce = data.getName().at(NONCE_OFFSET).toNumber();
   auto item = m_nonceMap.find(nonce);
 
+  std::list<tlv::AppendStatus> statusList;
   if (item != m_nonceMap.end()) {
     item->second.retryCount = 0;
     content.parse();
@@ -121,7 +128,7 @@ HandleCt::onSubmissionData(const Interest& interest, const Data& data)
       switch (item.type()) {
         case ndn::tlv::Data:
           // ideally we should run validator here
-          m_updateCallback(Data(item));
+          statusList.push_back(m_updateCallback(Data(item)));
           break;
         default:
           if (ndn::tlv::isCriticalType(item.type())) {
@@ -135,7 +142,7 @@ HandleCt::onSubmissionData(const Interest& interest, const Data& data)
     }
 
     // acking notification
-    m_face.put(*makeNotificationAck(interest.getName(), tlv::AppendStatus::SUCCESS));
+    m_face.put(*makeNotificationAck(interest.getName(), statusList));
     NDN_LOG_TRACE("Putting notification ack");
     m_nonceMap.erase(nonce);
   }

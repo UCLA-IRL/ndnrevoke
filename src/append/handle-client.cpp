@@ -144,9 +144,6 @@ HandleClient::onNotificationAck(const uint64_t nonce, const Data& data)
     }
   }
   switch (status) {
-    case tlv::AppendStatus::NOTINITIALIZED:
-      NDN_LOG_ERROR("Not initialized status code\n");
-      break;
     case tlv::AppendStatus::SUCCESS:
       NDN_LOG_TRACE("Append succeeded\n");
       if (iter != m_callback.end()) {
@@ -154,6 +151,10 @@ HandleClient::onNotificationAck(const uint64_t nonce, const Data& data)
         m_callback.erase(iter);
       }
       break;
+    case tlv::AppendStatus::NOTINITIALIZED:
+      NDN_LOG_ERROR("Not initialized certificate state (e.g., nx cert)\n");
+    case tlv::AppendStatus::FAILURE_VALIDATION:
+      NDN_LOG_ERROR("Submission validation failed\n");
     case tlv::AppendStatus::FAILURE_NACK:
     case tlv::AppendStatus::FAILURE_TIMEOUT:
       NDN_LOG_TRACE("Append failed\n");

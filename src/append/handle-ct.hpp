@@ -8,7 +8,7 @@
 namespace ndnrevoke {
 namespace append {
 
-using UpdateCallback = std::function<void(const Data&)>;
+using UpdateCallback = std::function<tlv::AppendStatus(const Data&)>;
 
 
 class HandleCt : public Handle
@@ -31,7 +31,7 @@ NDNREVOKE_PUBLIC_WITH_TESTS_ELSE_PRIVATE:
   onSubmissionData(const Interest& interest, const Data& data);
   
   std::shared_ptr<Data>
-  makeNotificationAck(const Name& notificationName, const tlv::AppendStatus status);
+  makeNotificationAck(const Name& notificationName, const std::list<tlv::AppendStatus> statusList);
 
 NDNREVOKE_PUBLIC_WITH_TESTS_ELSE_PRIVATE:
   std::map<uint64_t, appendtlv::AppenderInfo> m_nonceMap;
