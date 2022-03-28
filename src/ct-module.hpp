@@ -2,6 +2,7 @@
 #define NDNREVOKE_CT_MODULE_HPP
 
 #include "storage/ct-storage.hpp"
+#include "append/handle-ct.hpp"
 #include "ct-configuration.hpp"
 #include "nack.hpp"
 
@@ -40,7 +41,10 @@ public:
   std::unique_ptr<CertificateState>
   getCertificateState(const Name& certName);
 
-private:
+NDNREVOKE_PUBLIC_WITH_TESTS_ELSE_PRIVATE:
+
+  tlv::AppendStatus onDataSubmission(const Data& data);
+
   std::shared_ptr<nack::Nack>
   prepareNack(const CertificateState& certState, Name::Component publisherId, 
               ndn::time::milliseconds freshnessPeriod = 10_h);
@@ -58,6 +62,8 @@ NDNREVOKE_PUBLIC_WITH_TESTS_ELSE_PRIVATE:
   std::unique_ptr<CtStorage> m_storage;
   std::list<ndn::RegisteredPrefixHandle> m_registeredPrefixHandles;
   std::list<ndn::InterestFilterHandle> m_interestFilterHandles;
+
+  std::shared_ptr<append::HandleCt> m_handle;
 };
 
 } // namespace ct

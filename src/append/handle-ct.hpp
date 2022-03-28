@@ -10,6 +10,7 @@ namespace append {
 
 using UpdateCallback = std::function<tlv::AppendStatus(const Data&)>;
 
+std::string statusToString(tlv::AppendStatus status);
 
 class HandleCt : public Handle
 {

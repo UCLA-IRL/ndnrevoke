@@ -22,6 +22,9 @@ CtModule::CtModule(ndn::Face& face, ndn::KeyChain& keyChain, const std::string& 
   m_config.load(configPath);
   m_storage = CtStorage::createCtStorage(storageType, m_config.ctPrefix, "");
   registerPrefix();
+
+  m_handle = std::make_shared<append::HandleCt>(m_config.ctPrefix, face, m_keyChain);
+  m_handle->listenOnTopic(Name(m_config.ctPrefix).append("append"), std::bind(&CtModule::onDataSubmission, this, _1));
 }
 
 CtModule::~CtModule()
@@ -72,6 +75,37 @@ CtModule::getCertificateState(const Name& certName)
     NDN_LOG_ERROR("Cannot get certificate state record from the storage\n");
     return nullptr;
   }
+}
+
+tlv::AppendStatus 
+CtModule::onDataSubmission(const Data& data)
+{
+  NDN_LOG_TRACE("Received Submission " << data);
+  if (data.getName().at(Certificate::KEY_COMPONENT_OFFSET) == Name::Component("KEY")) {
+    Certificate cert(data);
+    auto certState = makeCertificateState(cert);
+    try {
+      m_storage->addCertificateState(*certState);
+    }
+    catch (const std::exception& e) {
+      m_storage->updateCertificateState(*certState);
+    }
+    return tlv::AppendStatus::SUCCESS;
+  }
+  else if (data.getName().at(record::Record::REVOKE_OFFSET) == Name::Component("REVOKE")) {
+    record::Record record(data);
+    CertificateState certState;
+    try {
+      certState = m_storage->getCertificateState(record.getCertificateName(record.getName()));
+      m_storage->updateCertificateState(certState);
+    }
+    catch (const std::exception& e) {
+      return tlv::AppendStatus::FAILURE_NX_CERT;
+      // certState.updateCertificateState(record);
+      // m_storage->addCertificateState(certState);
+    }
+  }
+  return tlv::AppendStatus::NOTINITIALIZED;
 }
 
 void
@@ -158,8 +192,8 @@ CtModule::onQuery(const Interest& query) {
     }
   }
   else {
-    // Ct does not know the answer
-    NDN_LOG_INFO("Record Keeper does not know the answer for " << certName << ", not respond\n");
+    // CT does not know the answer
+    NDN_LOG_INFO("CT does not know the answer for " << certName << ", not respond\n");
   }
 }
 

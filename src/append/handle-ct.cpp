@@ -11,6 +11,24 @@ NDN_LOG_INIT(ndnrevoke.append);
 
 const ssize_t MAX_RETRIES = 2;
 
+std::string statusToString(tlv::AppendStatus status)
+{
+  switch (status) {
+    case tlv::AppendStatus::SUCCESS:
+      return "Success";
+    case tlv::AppendStatus::FAILURE_NACK:
+      return "FAILURE_NACK";
+    case tlv::AppendStatus::FAILURE_TIMEOUT:
+      return "FAILURE_TIMEOUT";
+    case tlv::AppendStatus::FAILURE_NX_CERT:
+      return "FAILURE_NX_CERT";
+    case tlv::AppendStatus::NOTINITIALIZED:
+      return "NOTINITIALIZED";
+    default:
+      return "Unrecognized status";
+  }
+}
+
 HandleCt::HandleCt(const ndn::Name& prefix, ndn::Face& face, ndn::KeyChain& keyChain)
   : Handle(prefix, face, keyChain)
 {
@@ -41,23 +59,24 @@ HandleCt::dispatchInterest(const Interest& interest, const uint64_t nonce)
   }
 
   if (item->second.retryCount++ > MAX_RETRIES) {
-    NDN_LOG_ERROR("Running out of retries: " << item->second.retryCount << " retries");
+    NDN_LOG_ERROR("Interest " << interest << " run out of " << item->second.retryCount << " retries");
     // acking notification
-    m_face.put(*makeNotificationAck(interest.getName(), {tlv::AppendStatus::FAILURE_TIMEOUT}));
+    m_face.put(*makeNotificationAck(item->second.interestName, {tlv::AppendStatus::FAILURE_TIMEOUT}));
     NDN_LOG_TRACE("Putting notification ack");
     m_nonceMap.erase(nonce);
     return;
   }
   
+  NDN_LOG_TRACE("Sending out interest " << interest);
   m_face.expressInterest(interest, 
-    [&] (auto& i, const auto& d) { onSubmissionData(i, d);},
-    [&] (const auto& i, auto& n) {
+    [=] (auto& i, const auto& d) { onSubmissionData(i, d);},
+    [=] (const auto& i, auto& n) {
       // acking notification
-      m_face.put(*makeNotificationAck(interest.getName(), {tlv::AppendStatus::FAILURE_NACK}));
+      m_face.put(*makeNotificationAck(item->second.interestName, {tlv::AppendStatus::FAILURE_NACK}));
       NDN_LOG_TRACE("Putting notification ack");
       m_nonceMap.erase(nonce);
     },
-    [&] (const auto& i) {
+    [=] (const auto& i) {
       NDN_LOG_TRACE("Retry");
       dispatchInterest(interest, nonce);
     }
@@ -95,6 +114,12 @@ HandleCt::onNotification(Interest interest)
   // <topic> should be /<ct-prefix>/append
   appendtlv::AppenderInfo info;
   appendtlv::decodeAppendParameters(interest.getApplicationParameters(), info);
+  
+  if (m_nonceMap.find(info.nonce) != m_nonceMap.end()) {
+    NDN_LOG_TRACE("Old notification: [nonce " << info.nonce << " ] [remotePrefix " << info.remotePrefix << " ]");
+    return;
+  }
+  
   NDN_LOG_TRACE("New notification: [nonce " << info.nonce << " ] [remotePrefix " << info.remotePrefix << " ]");
   info.interestName = interest.getName();
   info.retryCount = 0;
@@ -115,6 +140,7 @@ void
 HandleCt::onSubmissionData(const Interest& interest, const Data& data)
 {
   // /ndn/site1/abc/msg/ndn/append/%29%40%87u%89%F9%8D%E4
+  NDN_LOG_TRACE("Receiving submission data " << data.getName());
   auto content = data.getContent();
   const ssize_t NONCE_OFFSET = -1;
   const uint64_t nonce = data.getName().at(NONCE_OFFSET).toNumber();
@@ -124,11 +150,16 @@ HandleCt::onSubmissionData(const Interest& interest, const Data& data)
   if (item != m_nonceMap.end()) {
     item->second.retryCount = 0;
     content.parse();
+    ssize_t count = 0;
+    ndnrevoke::tlv::AppendStatus statusCode;
     for (const auto &item : content.elements()) {
       switch (item.type()) {
         case ndn::tlv::Data:
+          count++;
           // ideally we should run validator here
-          statusList.push_back(m_updateCallback(Data(item)));
+          statusCode = m_updateCallback(Data(item));
+          NDN_LOG_TRACE("Status code for Data " << count << " is " << statusToString(statusCode));
+          statusList.push_back(statusCode);
           break;
         default:
           if (ndn::tlv::isCriticalType(item.type())) {
@@ -142,9 +173,12 @@ HandleCt::onSubmissionData(const Interest& interest, const Data& data)
     }
 
     // acking notification
-    m_face.put(*makeNotificationAck(interest.getName(), statusList));
+    m_face.put(*makeNotificationAck(item->second.interestName, statusList));
     NDN_LOG_TRACE("Putting notification ack");
     m_nonceMap.erase(nonce);
+  }
+  else {
+    NDN_LOG_TRACE("Unrecognized nonce: " << nonce);
   }
 }
 

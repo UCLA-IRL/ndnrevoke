@@ -3,9 +3,6 @@
 #include "append/handle-client.hpp"
 
 #include <ndn-cxx/security/signing-helpers.hpp>
-#include <thread>
-#include <chrono>
-#include <future>
 
 namespace ndnrevoke {
 namespace append { 
@@ -29,16 +26,18 @@ HandleClient::HandleClient(const ndn::Name& prefix, ndn::Face& face, ndn::KeyCha
       // notice: this only register FIB to Face, not NFD.
       // register for /<prefix>/msg
       auto filterId = m_face.setInterestFilter(Name(m_localPrefix).append("msg"), 
-        [this] (auto&&, const auto& i) { 
-          onSubmissionFetchingInterest(i); 
-      });
+        [this] (auto&&, const auto& i) {
+          onSubmissionFetchingInterest(i);
+        }
+      );
       m_interestFilterHandles.push_back(filterId);
       NDN_LOG_TRACE("Registering filter for " << Name(m_localPrefix).append("msg"));
     },
-    [&] (auto&&, const auto& reason) {   
+    [&] (auto&&, const auto& reason) {
       NDN_LOG_ERROR("Failed to register prefix with the local forwarder (" << reason << ")\n");
-      m_face.shutdown(); 
-    });
+      m_face.shutdown();
+    }
+  );
   m_registeredPrefixHandles.push_back(prefixId);
 }
 
@@ -56,16 +55,17 @@ HandleClient::dispatchNotification(const Interest& interest, const uint64_t nonc
     return;
   }
   
+  NDN_LOG_TRACE("Sending out interest " << interest);
   m_face.expressInterest(interest, 
-    [&] (auto&&, const auto& i) { onNotificationAck(nonce, i);}, 
-    [&] (const auto& i, auto& n) {
+    [=] (auto&&, const auto& i) { onNotificationAck(nonce, i);}, 
+    [=] (const auto& i, auto& n) {
       auto iter = m_callback.find(nonce);
       if (iter != m_callback.end()) {
         iter->second.onNack(i, n);
         m_callback.erase(iter);
       }
     },
-    [&] (const auto& i) {
+    [=] (const auto& i) {
       dispatchNotification(interest, nonce);
     }
   );
@@ -152,11 +152,12 @@ HandleClient::onNotificationAck(const uint64_t nonce, const Data& data)
       }
       break;
     case tlv::AppendStatus::NOTINITIALIZED:
-      NDN_LOG_ERROR("Not initialized certificate state (e.g., nx cert)\n");
+      NDN_LOG_ERROR("Not initialized certificate state\n");
     case tlv::AppendStatus::FAILURE_VALIDATION:
       NDN_LOG_ERROR("Submission validation failed\n");
     case tlv::AppendStatus::FAILURE_NACK:
     case tlv::AppendStatus::FAILURE_TIMEOUT:
+    case tlv::AppendStatus::FAILURE_NX_CERT:
       NDN_LOG_TRACE("Append failed\n");
       if (iter != m_callback.end()) {
         iter->second.onFailure(data);
@@ -177,7 +178,7 @@ HandleClient::onSubmissionFetchingInterest(const Interest& interest)
 
   const ssize_t NONCE_OFFSET = -1;
   uint64_t nonce = interest.getName().get(NONCE_OFFSET).toNumber();
-  NDN_LOG_TRACE("Command fetching: [nonce " << nonce << " ]");
+  NDN_LOG_TRACE("Submission fetching: [nonce " << nonce << " ]");
   
   auto iter = m_nonceMap.find(nonce);
   if (iter != m_nonceMap.end()) {
@@ -191,7 +192,7 @@ HandleClient::onSubmissionFetchingInterest(const Interest& interest)
     content.encode();
 
     NDN_LOG_TRACE("Putting " << std::to_string(dataCount) << " Data into submission");
-    Data submission;
+    Data submission(interest.getName());
     submission.setContent(content);
     m_keyChain.sign(submission, ndn::signingByIdentity(m_localPrefix));
     m_face.put(submission);

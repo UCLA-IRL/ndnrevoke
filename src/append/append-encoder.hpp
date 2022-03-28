@@ -2,7 +2,6 @@
 #define NDNREVOKE_APPEND_APPEND_ENCODER_HPP
 
 #include "append/append-common.hpp"
-#include "append/handle-client.hpp"
 #include <ndn-cxx/security/key-chain.hpp>
 
 namespace ndnrevoke {

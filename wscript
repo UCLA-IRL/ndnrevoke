@@ -16,12 +16,15 @@ def options(opt):
     optgrp = opt.add_option_group('ndnrevoke Options')
     optgrp.add_option('--with-tests', action='store_true', default=False,
                       help='Build unit tests')
+    optgrp.add_option('--with-examples', action='store_true', default=False,
+                      help='Build examples')
 
 def configure(conf):
     conf.load(['compiler_cxx', 'gnu_dirs',
                'default-compiler-flags', 'boost', 'openssl', 'sqlite3'])
 
     conf.env.WITH_TESTS = conf.options.with_tests
+    conf.env.WITH_EXAMPLES = conf.options.with_examples
 
     conf.check_cfg(package='libndn-cxx', args=['--cflags', '--libs'], uselib_store='NDN_CXX',
                    pkg_config_path=os.environ.get('PKG_CONFIG_PATH', '%s/pkgconfig' % conf.env.LIBDIR))
@@ -76,6 +79,8 @@ def build(bld):
         VERSION=VERSION)
 
     bld.recurse('tests')
+    if bld.env.WITH_EXAMPLES:
+        bld.recurse('examples')
 
     bld.install_files(
         dest='${INCLUDEDIR}/ndnrevoke',

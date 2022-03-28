@@ -46,6 +46,7 @@ enum class AppendStatus : uint64_t {
   FAILURE_NACK = 1,
   FAILURE_TIMEOUT = 2,
   FAILURE_VALIDATION = 3,
+  FAILURE_NX_CERT = 4,
   NOTINITIALIZED = 99,
 };
 
