@@ -3,7 +3,7 @@
   "nack-freshness-period": "864000",
   "record-zones":
   [
-    {"record-zone-prefix": "/ndn/site5"},
-    {"record-zone-prefix": "/ndn/site6"}
+    {"record-zone-prefix": "/ndn/site1"},
+    {"record-zone-prefix": "/ndn/site2"}
   ]
 }
