@@ -30,7 +30,7 @@ CtStorageLedger::CtStorageLedger(const Name& ctName, const std::string& path) {
         config = cert_ledger::Config::CustomizedConfig("/ndn/broadcast/cert-ledger-dag", ctName.toUri(),
                                                        dbPath);
         auto configValidator = std::make_shared<ndn::security::ValidatorConfig>(face);
-        configValidator->load("./test/loggers.schema");
+        configValidator->load("./schema/loggers.schema");
         validator = configValidator;
     }
     catch (const std::exception &e) {

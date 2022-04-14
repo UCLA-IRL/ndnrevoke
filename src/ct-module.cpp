@@ -164,8 +164,7 @@ CtModule::onQuery(const Interest& query) {
   Name certName = query.getName();
   auto publisherId = query.getName().at(record::Record::PUBLISHER_OFFSET);
   // need more proper handling here
-  certName.set(record::Record::REVOKE_OFFSET, Name::Component("KEY"));
-  certName.erase(record::Record::PUBLISHER_OFFSET);
+  certName = record::Record::getCertificateName(certName);
 
   auto state = getCertificateState(certName);
   if (state) {

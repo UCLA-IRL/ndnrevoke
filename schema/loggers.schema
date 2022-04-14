@@ -1,0 +1,39 @@
+rule
+{
+  id "logger-verification"
+  for data
+  filter
+  {
+    type name
+    name /ndn
+    relation is-strict-prefix-of
+  }
+  checker
+  {
+    type hierarchical
+    sig-type ecdsa-sha256
+  }
+}
+
+rule
+{
+  id "logger-interest-verification"
+  for interest
+  filter
+  {
+    type name
+    name /ndn
+    relation is-strict-prefix-of
+  }
+  checker
+  {
+    type hierarchical
+    sig-type ecdsa-sha256
+  }
+}
+
+trust-anchor
+{
+  type file
+  file-name "cert-ledger-anchor.cert"
+}

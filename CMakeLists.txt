@@ -36,3 +36,4 @@ target_compile_options(ndn-revoke PUBLIC ${NDN_CXX_CFLAGS} ${CERT_LEDGER_CFLAGS}
 target_link_libraries(ndn-revoke PUBLIC ${NDN_CXX_LIBRARIES} ${CERT_LEDGER_LIBRARIES})
 
 add_subdirectory(tests)
+add_subdirectory(examples)
