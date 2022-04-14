@@ -84,11 +84,13 @@ CtModule::onDataSubmission(const Data& data)
   if (data.getName().at(Certificate::KEY_COMPONENT_OFFSET) == Name::Component("KEY")) {
     Certificate cert(data);
     auto certState = makeCertificateState(cert);
+    certState->ctPrefix = m_config.ctPrefix;
     try {
       m_storage->addCertificateState(*certState);
     }
     catch (const std::exception& e) {
-      m_storage->updateCertificateState(*certState);
+        NDN_LOG_ERROR("Error on appending cert record: " << e.what());
+        return tlv::AppendStatus::FAILURE_NX_CERT;
     }
     return tlv::AppendStatus::SUCCESS;
   }
@@ -102,6 +104,7 @@ CtModule::onDataSubmission(const Data& data)
       return tlv::AppendStatus::SUCCESS;
     }
     catch (const std::exception& e) {
+      NDN_LOG_ERROR("Error on appending revocation record: " << e.what());
       return tlv::AppendStatus::FAILURE_NX_CERT;
       // certState.updateCertificateState(record);
       // m_storage->addCertificateState(certState);
