@@ -43,7 +43,8 @@ main(int argc, char* argv[])
     keyChain.createIdentity(Name("/ndn"));
   }
 
-  CtModule ct(face, keyChain, "ct.config.sample");
+  if (argc < 2) { printf("Missing argument\n"); return 1; }
+  CtModule ct(face, keyChain, argv[1], "ct-storage-ledger");
   face.processEvents();
   return 0;
 }

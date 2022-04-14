@@ -61,7 +61,7 @@ main(int argc, char* argv[])
     state::State state(cert, keyChain);
     state.setRevocationReason(tlv::ReasonCode::SUPERSEDED);
     auto record = state.genOwnerRecord(key.getName());
-    client.appendData(Name("/ndn/append"), {*record}, nullptr,
+    client.appendData(Name("/ndn/ct1/append"), {*record}, nullptr,
         [] (auto& i) {
           Block content = i.getContent();
           content.parse();
@@ -87,7 +87,7 @@ main(int argc, char* argv[])
     state::State state(cert, keyChain);
     state.setRevocationReason(tlv::ReasonCode::SUPERSEDED);
     auto record = state.genOwnerRecord(key.getName());
-    client.appendData(Name("/ndn/append"), {cert, *record},
+    client.appendData(Name("/ndn/ct1/append"), {cert, *record},
         [] (auto& i) {
           Block content = i.getContent();
           content.parse();
