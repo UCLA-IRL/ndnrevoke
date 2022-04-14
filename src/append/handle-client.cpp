@@ -152,7 +152,7 @@ HandleClient::onNotificationAck(const uint64_t nonce, const Data& data)
     else {
       NDN_LOG_TRACE("Not all succeeded\n");
       if (iter != m_callback.end()) {
-        iter->second.onFailure(data);
+        if (iter->second.onFailure) iter->second.onFailure(data);
         m_callback.erase(iter);
         return;
       }
@@ -160,7 +160,7 @@ HandleClient::onNotificationAck(const uint64_t nonce, const Data& data)
   }
   NDN_LOG_TRACE("All succeeded\n");
   if (iter != m_callback.end()) {
-    iter->second.onSuccess(data);
+    if (iter->second.onSuccess) iter->second.onSuccess(data);
     m_callback.erase(iter);
   }
 }

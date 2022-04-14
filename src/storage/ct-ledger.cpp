@@ -88,8 +88,9 @@ void CtLedger::addCertificateState(const CertificateState &state) {
 }
 
 void CtLedger::updateCertificateState(const CertificateState &state) {
+    auto certRecord = m_ledger->hasRecord(state.cert.getName());
     auto revokeRecords = m_ledger->listRecord(record::Record::getRevocationRecordPrefix(state.cert.getName()));
-    if (revokeRecords.empty() && state.status == CertificateStatus::REVOKED_CERTIFICATE) {
+    if (certRecord && revokeRecords.empty() && state.status == CertificateStatus::REVOKED_CERTIFICATE) {
         cert_ledger::Record r(m_ledger->getPeerPrefix(), state.record);
         auto code = m_ledger->createRecord(r);
         if (!code.success()) {
@@ -97,7 +98,7 @@ void CtLedger::updateCertificateState(const CertificateState &state) {
         }
     } else {
         NDN_LOG_ERROR("Error on calling updateCertificateState: "
-                      "ledger does not support modification other than add revocation");
+                      "ledger does not support modification other than add revocation to existing cert record");
     }
 }
 
