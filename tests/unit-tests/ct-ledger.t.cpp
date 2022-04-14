@@ -1,4 +1,4 @@
-#include "storage/ct-storage-ledger.hpp"
+#include "storage/ct-ledger.hpp"
 #include "record-encoder.hpp"
 #include "test-common.hpp"
 #include "ndn-cxx/security/validator-null.hpp"
@@ -17,12 +17,12 @@ class LedgerTest: public IdentityManagementFixture {
         m_keyChain.createIdentity("/ndn/ct1");
         auto config = cert_ledger::Config::CustomizedConfig("/ndn/broadcast/cert-ledger-dag", "/ndn/ct1",
                                                             "/tmp/ct-ledger-test" + std::to_string(ndn::random::generateWord32()));
-        storage = make_shared<CtStorageLedger>(*config, m_keyChain, dummyFace,
-                                               std::make_shared<security::ValidatorNull>());
+        storage = make_shared<CtLedger>(*config, m_keyChain, dummyFace,
+                                        std::make_shared<security::ValidatorNull>());
     }
   public:
     util::DummyClientFace dummyFace;
-    std::shared_ptr<CtStorageLedger> storage;
+    std::shared_ptr<CtLedger> storage;
     Identity identity1;
     const Key &key1;
     const Certificate &cert1;

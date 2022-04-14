@@ -2,7 +2,7 @@
 // Created by Tyler on 3/23/22.
 //
 
-#include "ct-storage-ledger.hpp"
+#include "ct-ledger.hpp"
 #include "record-encoder.hpp"
 
 #include "ndn-cxx/security/validator-config.hpp"
@@ -13,10 +13,10 @@ namespace ct {
 
 NDN_LOG_INIT(ndnrevoke.ct-storage.ledger);
 
-const std::string CtStorageLedger::STORAGE_TYPE = "ct-storage-ledger";
-NDNREVOKE_REGISTER_CT_STORAGE(CtStorageLedger);
+const std::string CtLedger::STORAGE_TYPE = "ct-storage-ledger";
+NDNREVOKE_REGISTER_CT_STORAGE(CtLedger);
 
-CtStorageLedger::CtStorageLedger(const Name& ctName, const std::string& path) {
+CtLedger::CtLedger(const Name& ctName, const std::string& path) {
     std::string dbPath;
     if (path.empty())
         dbPath = "/tmp/cert-ledger-db/" + readString(ctName.get(-1));
@@ -40,15 +40,15 @@ CtStorageLedger::CtStorageLedger(const Name& ctName, const std::string& path) {
     m_ledger = std::make_unique<cert_ledger::CertLedger>(*config, keychain, face, validator);
 }
 
-CtStorageLedger::CtStorageLedger(const cert_ledger::Config &config,
-                                 security::KeyChain &keychain,
-                                 Face &network,
-                                 std::shared_ptr<ndn::security::Validator> recordValidator)
+CtLedger::CtLedger(const cert_ledger::Config &config,
+                   security::KeyChain &keychain,
+                   Face &network,
+                   std::shared_ptr<ndn::security::Validator> recordValidator)
         : m_ledger(std::make_unique<cert_ledger::CertLedger>(config, keychain, network, recordValidator))
 {
 }
 
-CertificateState CtStorageLedger::getCertificateState(const ndn::Name &certName) {
+CertificateState CtLedger::getCertificateState(const ndn::Name &certName) {
     auto certRecord = m_ledger->getRecord(certName);
     auto revokeRecords = m_ledger->listRecord(record::Record::getRevocationRecordPrefix(certName));
     if (!certRecord) {
@@ -69,7 +69,7 @@ CertificateState CtStorageLedger::getCertificateState(const ndn::Name &certName)
     }
 }
 
-void CtStorageLedger::addCertificateState(const CertificateState &state) {
+void CtLedger::addCertificateState(const CertificateState &state) {
     NDN_LOG_TRACE("Adding CertificateState:\n" << state);
     if (state.ctPrefix != m_ledger->getPeerPrefix()) {
         NDN_THROW(std::runtime_error("This Ledger is not authoritative to the state"));
@@ -87,7 +87,7 @@ void CtStorageLedger::addCertificateState(const CertificateState &state) {
         updateCertificateState(state);
 }
 
-void CtStorageLedger::updateCertificateState(const CertificateState &state) {
+void CtLedger::updateCertificateState(const CertificateState &state) {
     auto revokeRecords = m_ledger->listRecord(record::Record::getRevocationRecordPrefix(state.cert.getName()));
     if (revokeRecords.empty() && state.status == CertificateStatus::REVOKED_CERTIFICATE) {
         cert_ledger::Record r(m_ledger->getPeerPrefix(), state.record);
@@ -101,15 +101,15 @@ void CtStorageLedger::updateCertificateState(const CertificateState &state) {
     }
 }
 
-void CtStorageLedger::deleteCertificateState(const ndn::Name &certName) {
+void CtLedger::deleteCertificateState(const ndn::Name &certName) {
     NDN_THROW(std::runtime_error("Error on calling deleteCertificateState: ledger does not support deletion"));
 }
 
-std::list<CertificateState> CtStorageLedger::listAllCertificateStates() {
+std::list<CertificateState> CtLedger::listAllCertificateStates() {
     return listAllCertificateStates(Name());
 }
 
-std::list<CertificateState> CtStorageLedger::listAllCertificateStates(const ndn::Name &ctName) {
+std::list<CertificateState> CtLedger::listAllCertificateStates(const ndn::Name &ctName) {
     std::list<CertificateState> list;
     for (const auto& n: m_ledger->listRecord(ctName)) {
         NDN_LOG_DEBUG(n);

@@ -49,7 +49,7 @@ HandleClient::dispatchNotification(const Interest& interest, const uint64_t nonc
     auto iter = m_callback.find(nonce);
     // no more retransmissions, directly timeout
     if (iter != m_callback.end()) {
-      iter->second.onTimeout(interest);
+      if (iter->second.onTimeout) iter->second.onTimeout(interest);
       m_callback.erase(iter);
     }
     return;
@@ -61,7 +61,7 @@ HandleClient::dispatchNotification(const Interest& interest, const uint64_t nonc
     [=] (const auto& i, auto& n) {
       auto iter = m_callback.find(nonce);
       if (iter != m_callback.end()) {
-        iter->second.onNack(i, n);
+        if (iter->second.onNack) iter->second.onNack(i, n);
         m_callback.erase(iter);
       }
     },

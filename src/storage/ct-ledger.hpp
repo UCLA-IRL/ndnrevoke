@@ -2,8 +2,8 @@
 // Created by Tyler on 3/23/22.
 //
 
-#ifndef NDNREVOKE_CT_STORAGE_LEDGER_HPP
-#define NDNREVOKE_CT_STORAGE_LEDGER_HPP
+#ifndef NDNREVOKE_CT_LEDGER_HPP
+#define NDNREVOKE_CT_LEDGER_HPP
 
 #include "ct-storage.hpp"
 #include "cert-ledger/cert-ledger.hpp"
@@ -11,13 +11,13 @@
 namespace ndnrevoke {
 namespace ct {
 
-class CtStorageLedger : public CtStorage {
+class CtLedger : public CtStorage {
   public:
-    CtStorageLedger(const Name& ctName = Name(), const std::string& path = "");
-    CtStorageLedger(const cert_ledger::Config &config,
-                    security::KeyChain &keychain,
-                    Face &network,
-                    std::shared_ptr<ndn::security::Validator> recordValidator);
+    CtLedger(const Name& ctName = Name(), const std::string& path = "");
+    CtLedger(const cert_ledger::Config &config,
+             security::KeyChain &keychain,
+             Face &network,
+             std::shared_ptr<ndn::security::Validator> recordValidator);
     const static std::string STORAGE_TYPE;
   public:
     CertificateState getCertificateState(const Name &certName) override;
@@ -40,4 +40,4 @@ class CtStorageLedger : public CtStorage {
 } // namespace ndnrevoke
 
 
-#endif //NDNREVOKE_CT_STORAGE_LEDGER_HPP
+#endif //NDNREVOKE_CT_LEDGER_HPP

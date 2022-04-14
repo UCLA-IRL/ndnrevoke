@@ -39,7 +39,6 @@ public: // factory
   registerCtStorage(const std::string& ctStorageType = CtStorageType::STORAGE_TYPE)
   {
     CtStorageFactory& factory = getFactory();
-    BOOST_ASSERT(factory.count(ctStorageType) == 0);
     factory[ctStorageType] = [] (const Name& ctName, const std::string& path) {
       return std::make_unique<CtStorageType>(ctName, path);
     };
