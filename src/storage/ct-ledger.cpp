@@ -16,14 +16,13 @@ NDN_LOG_INIT(ndnrevoke.ct-storage.ledger);
 const std::string CtLedger::STORAGE_TYPE = "ct-storage-ledger";
 NDNREVOKE_REGISTER_CT_STORAGE(CtLedger);
 
-CtLedger::CtLedger(const Name& ctName, const std::string& path) {
+CtLedger::CtLedger(security::KeyChain &keychain, const Name& ctName, const std::string& path) {
     std::string dbPath;
     if (path.empty())
         dbPath = "/tmp/cert-ledger-db/" + readString(ctName.get(-1));
     else
         dbPath = path;
     Face face;
-    security::KeyChain keychain;
     std::shared_ptr<cert_ledger::Config> config = nullptr;
     std::shared_ptr<ndn::security::Validator> validator;
     try {

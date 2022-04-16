@@ -39,19 +39,19 @@ public: // factory
   registerCtStorage(const std::string& ctStorageType = CtStorageType::STORAGE_TYPE)
   {
     CtStorageFactory& factory = getFactory();
-    factory[ctStorageType] = [] (const Name& ctName, const std::string& path) {
-      return std::make_unique<CtStorageType>(ctName, path);
+    factory[ctStorageType] = [] (ndn::security::KeyChain& keychain, const Name& ctName, const std::string& path) {
+      return std::make_unique<CtStorageType>(keychain, ctName, path);
     };
   }
 
   static std::unique_ptr<CtStorage>
-  createCtStorage(const std::string& ctStorageType, const Name& ctName, const std::string& path);
+  createCtStorage(const std::string& ctStorageType, ndn::security::KeyChain& keychain, const Name& ctName, const std::string& path);
 
   virtual
   ~CtStorage() = default;
 
 private:
-  using CtStorageCreateFunc = std::function<std::unique_ptr<CtStorage> (const Name&, const std::string&)>;
+  using CtStorageCreateFunc = std::function<std::unique_ptr<CtStorage> (ndn::security::KeyChain& keychain, const Name&, const std::string&)>;
   using CtStorageFactory = std::map<std::string, CtStorageCreateFunc>;
 
   static CtStorageFactory&

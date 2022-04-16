@@ -9,7 +9,7 @@ namespace ct {
 class CtMemory : public CtStorage
 {
 public:
-  CtMemory(const Name& ctName = Name(), const std::string& path = "");
+  CtMemory(ndn::security::KeyChain& keychain, const Name& ctName = Name(), const std::string& path = "");
   const static std::string STORAGE_TYPE;
 
 public:
