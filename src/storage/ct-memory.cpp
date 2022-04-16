@@ -8,8 +8,11 @@ NDN_LOG_INIT(ndnrevoke.ct);
 const std::string CtMemory::STORAGE_TYPE = "ct-storage-memory";
 NDNREVOKE_REGISTER_CT_STORAGE(CtMemory);
 
-CtMemory::CtMemory(ndn::security::KeyChain& keychain, const Name& ctName, const std::string& path)
-  : CtStorage()
+CtMemory::CtMemory(ndn::security::KeyChain& keychain, ndn::Face &network, const Name& ctName, const std::string& path)
+{
+}
+
+CtMemory::CtMemory()
 {
 }
 

@@ -20,7 +20,7 @@ CtModule::CtModule(ndn::Face& face, ndn::KeyChain& keyChain, const std::string& 
 {
   // load the config and create storage
   m_config.load(configPath);
-  m_storage = CtStorage::createCtStorage(storageType, m_keyChain, m_config.ctPrefix, "");
+  m_storage = CtStorage::createCtStorage(storageType, m_keyChain, m_face, m_config.ctPrefix, "");
   registerPrefix();
 
   m_handle = std::make_shared<append::HandleCt>(m_config.ctPrefix, face, m_keyChain);

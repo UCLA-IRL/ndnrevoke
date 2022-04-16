@@ -16,19 +16,18 @@ NDN_LOG_INIT(ndnrevoke.ct-storage.ledger);
 const std::string CtLedger::STORAGE_TYPE = "ct-storage-ledger";
 NDNREVOKE_REGISTER_CT_STORAGE(CtLedger);
 
-CtLedger::CtLedger(security::KeyChain &keychain, const Name& ctName, const std::string& path) {
+CtLedger::CtLedger(security::KeyChain &keychain, Face &network, const Name& ctName, const std::string& path) {
     std::string dbPath;
     if (path.empty())
         dbPath = "/tmp/cert-ledger-db/" + readString(ctName.get(-1));
     else
         dbPath = path;
-    Face face;
     std::shared_ptr<cert_ledger::Config> config = nullptr;
     std::shared_ptr<ndn::security::Validator> validator;
     try {
         config = cert_ledger::Config::CustomizedConfig("/ndn/broadcast/cert-ledger-dag", ctName.toUri(),
                                                        dbPath);
-        auto configValidator = std::make_shared<ndn::security::ValidatorConfig>(face);
+        auto configValidator = std::make_shared<ndn::security::ValidatorConfig>(network);
         configValidator->load("./schema/loggers.schema");
         validator = configValidator;
     }
@@ -36,7 +35,7 @@ CtLedger::CtLedger(security::KeyChain &keychain, const Name& ctName, const std::
         NDN_LOG_ERROR("error at initializing ledger storage: " << e.what());
         NDN_THROW(e);
     }
-    m_ledger = std::make_unique<cert_ledger::CertLedger>(*config, keychain, face, validator);
+    m_ledger = std::make_unique<cert_ledger::CertLedger>(*config, keychain, network, validator);
 }
 
 CtLedger::CtLedger(const cert_ledger::Config &config,

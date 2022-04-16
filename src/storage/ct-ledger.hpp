@@ -13,7 +13,7 @@ namespace ct {
 
 class CtLedger : public CtStorage {
   public:
-    CtLedger(security::KeyChain &keychain, const Name& ctName = Name(), const std::string& path = "");
+    CtLedger(security::KeyChain &keychain, Face &network, const Name& ctName = Name(), const std::string& path = "");
     CtLedger(const cert_ledger::Config &config,
              security::KeyChain &keychain,
              Face &network,
