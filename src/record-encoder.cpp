@@ -9,7 +9,7 @@ recordtlv::encodeRecordContent(const std::vector<uint8_t>& publicKeyHash, const 
   Block content(ndn::tlv::Content);
   auto revocationTimestamp = time::toUnixTimestamp(time::system_clock::now()).count();
   content.push_back(ndn::makeNonNegativeIntegerBlock(tlv::RevocationTimestamp, revocationTimestamp));
-  content.push_back(ndn::makeBinaryBlock(tlv::PublicKeyHash, publicKeyHash.data(), publicKeyHash.size()));
+  content.push_back(ndn::makeBinaryBlock(tlv::PublicKeyHash, {publicKeyHash.data(), publicKeyHash.size()}));
   content.push_back(ndn::makeNonNegativeIntegerBlock(tlv::RevocationReason, static_cast<uint64_t>(revocationReason)));
   return content;
 }

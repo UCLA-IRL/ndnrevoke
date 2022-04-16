@@ -7,6 +7,7 @@
 
 #include "ndn-cxx/security/validator-config.hpp"
 #include <string>
+#include <ndn-cxx/security/validator-null.hpp>
 
 namespace ndnrevoke {
 namespace ct {
@@ -27,8 +28,7 @@ CtLedger::CtLedger(security::KeyChain &keychain, Face &network, const Name& ctNa
     try {
         config = cert_ledger::Config::CustomizedConfig("/ndn/broadcast/cert-ledger-dag", ctName.toUri(),
                                                        dbPath);
-        auto configValidator = std::make_shared<ndn::security::ValidatorConfig>(network);
-        configValidator->load("./schema/loggers.schema");
+        auto configValidator = std::make_shared<ndn::security::ValidatorNull>();
         validator = configValidator;
     }
     catch (const std::exception &e) {
