@@ -1,6 +1,7 @@
 //
 // Created by Tyler on 3/23/22.
 //
+#ifdef NDNREVOKE_HAVE_LEDGERS
 
 #include "ct-ledger.hpp"
 #include "record-encoder.hpp"
@@ -125,3 +126,5 @@ std::list<CertificateState> CtLedger::listAllCertificateStates(const ndn::Name &
 
 } // namespace ct
 } // namespace ndnrevoke
+
+#endif

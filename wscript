@@ -18,6 +18,8 @@ def options(opt):
                       help='Build unit tests')
     optgrp.add_option('--with-examples', action='store_true', default=False,
                       help='Build examples')
+    optgrp.add_option('--with-ledgers', action='store_true', default=False,
+                      help='Use NDN Ledgers as backend storahe')
 
 def configure(conf):
     conf.load(['compiler_cxx', 'gnu_dirs',
@@ -25,11 +27,13 @@ def configure(conf):
 
     conf.env.WITH_TESTS = conf.options.with_tests
     conf.env.WITH_EXAMPLES = conf.options.with_examples
+    conf.env.WITH_LEDGERS = conf.options.with_ledgers
 
     conf.check_cfg(package='libndn-cxx', args=['--cflags', '--libs'], uselib_store='NDN_CXX',
                    pkg_config_path=os.environ.get('PKG_CONFIG_PATH', '%s/pkgconfig' % conf.env.LIBDIR))
-    conf.check_cfg(package='libcert-ledger', args=['--cflags', '--libs'], uselib_store='CERT_LEDGER',
-                       pkg_config_path=os.environ.get('PKG_CONFIG_PATH', '%s/pkgconfig' % conf.env.LIBDIR))
+    if conf.env.WITH_LEDGERS:
+        conf.check_cfg(package='libcert-ledger', args=['--cflags', '--libs'], uselib_store='CERT_LEDGER',
+                        pkg_config_path=os.environ.get('PKG_CONFIG_PATH', '%s/pkgconfig' % conf.env.LIBDIR))
 
     conf.check_sqlite3()
     conf.check_openssl(lib='crypto', atleast_version='1.1.1')
@@ -56,6 +60,7 @@ def configure(conf):
     conf.env.prepend_value('STLIBPATH', ['.'])
 
     conf.define_cond('HAVE_TESTS', conf.env.WITH_TESTS)
+    conf.define_cond('HAVE_LEDGERS', conf.env.WITH_LEDGERS)
     conf.define('SYSCONFDIR', conf.env.SYSCONFDIR)
     # The config header will contain all defines that were added using conf.define()
     # or conf.define_cond().  Everything that was added directly to conf.env.DEFINES

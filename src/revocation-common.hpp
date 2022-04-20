@@ -23,7 +23,7 @@
 #include <boost/noncopyable.hpp>
 #include <boost/property_tree/ptree.hpp>
 
-//#include "ndnrevoke-config.hpp"
+#include "ndnrevoke-config.hpp"
 
 #ifdef NDNREVOKE_HAVE_TESTS
 #define NDNREOVKE_VIRTUAL_WITH_TESTS virtual

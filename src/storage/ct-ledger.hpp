@@ -5,6 +5,8 @@
 #ifndef NDNREVOKE_CT_LEDGER_HPP
 #define NDNREVOKE_CT_LEDGER_HPP
 
+#ifdef NDNREVOKE_HAVE_LEDGERS
+
 #include "ct-storage.hpp"
 #include "cert-ledger/cert-ledger.hpp"
 
@@ -39,5 +41,6 @@ class CtLedger : public CtStorage {
 } // namespace ct
 } // namespace ndnrevoke
 
+#endif
 
 #endif //NDNREVOKE_CT_LEDGER_HPP

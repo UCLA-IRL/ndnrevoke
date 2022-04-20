@@ -3,6 +3,8 @@
 #include "test-common.hpp"
 #include "ndn-cxx/security/validator-null.hpp"
 
+#ifdef NDNREVOKE_HAVE_LEDGERS
+
 namespace ndnrevoke {
 namespace tests {
 
@@ -119,3 +121,5 @@ BOOST_AUTO_TEST_SUITE_END() // TestCtLedger
 
 } // namespace tests
 } // namespace ndnrevoke
+
+#endif
