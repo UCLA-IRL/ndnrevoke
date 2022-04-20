@@ -83,6 +83,7 @@ main(int argc, char* argv[])
    }
   );
 
+  //append cert & revocation reason 
   scheduler.schedule(CHECKOUT_INTERVAL, [&] {
     state::State state(cert, keyChain);
     state.setRevocationReason(tlv::ReasonCode::SUPERSEDED);
@@ -108,6 +109,20 @@ main(int argc, char* argv[])
     );
    }
   );
+
+  //query for certificate
+  scheduler.schedule(CHECKOUT_INTERVAL, [&] {
+    //construct interest
+    Interest certInterest(cert.getName());
+    interest.setForwardingHint({Name("/ndn/CT")});
+    face.expressInterest(interest, [] (auto& interest, auto& data) {
+      std::cout << "Received Data " << data << std::endl;
+    }, nullptr, nullptr
+    );
+   }
+  );
+
+
 
   face.processEvents();
   return 0;

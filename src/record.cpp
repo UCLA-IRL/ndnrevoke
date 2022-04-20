@@ -30,8 +30,12 @@ Name Record::getRevocationRecordPrefix(Name certName) {
 }
 
 Name Record::getCertificateName(Name revocationName) {
-    revocationName.set(REVOKE_OFFSET, Name::Component("KEY"));
-    revocationName.erase(record::Record::PUBLISHER_OFFSET);
+    if (revocationName.at(record::Record::REVOKE_OFFSET) == Name::Component("REVOKE")) {
+      revocationName.set(record::Record::REVOKE_OFFSET, Name::Component("KEY"));
+      revocationName.erase(record::Record::PUBLISHER_OFFSET);
+    } else {
+      revocationName.set(record::Record::REVOKE_OFFSET + 1, Name::Component("KEY"));
+    }
     return revocationName;
 }
 
