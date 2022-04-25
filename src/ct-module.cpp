@@ -3,6 +3,8 @@
 #include "nack-encoder.hpp"
 #include "state.hpp"
 
+#include <iostream>
+
 #include <ndn-cxx/security/signing-helpers.hpp>
 #include <ndn-cxx/security/verification-helpers.hpp>
 #include <ndn-cxx/util/io.hpp>
@@ -163,10 +165,18 @@ CtModule::onQuery(const Interest& query) {
   // Naming Convention: /<prefix>/REVOKE/<keyid>/<issuer>/<version>
   // need to validate query format
   NDN_LOG_TRACE("Received Query " << query);
-
   Name certName = query.getName();
-  auto publisherId = query.getName().at(record::Record::PUBLISHER_OFFSET);
+
+  if (! isValidQuery(certName)) {
+    return;
+  }
+  if (certName.at(record::Record::KEY_OFFSET).equals(Name::Component("KEY"))) {
+    m_face.put(getCertificateState(certName)->cert);
+    return;
+  }
+
   // need more proper handling here
+  auto publisherId = certName.at(record::Record::PUBLISHER_OFFSET);
   certName = record::Record::getCertificateName(certName);
 
   auto state = getCertificateState(certName);
@@ -221,6 +231,12 @@ void
 CtModule::onRegisterFailed(const std::string& reason)
 {
   NDN_LOG_ERROR("Failed to register prefix in local hub's daemon, REASON: " << reason);
+}
+
+bool 
+CtModule::isValidQuery(Name queryName) {
+    return (queryName.at(record::Record::REVOKE_OFFSET).equals(Name::Component("REVOKE")) 
+    || queryName.at(record::Record::KEY_OFFSET).equals(Name::Component("KEY")));
 }
 
 } // namespace ct

@@ -55,6 +55,9 @@ NDNREVOKE_PUBLIC_WITH_TESTS_ELSE_PRIVATE:
   void
   onRegisterFailed(const std::string& reason);
 
+  bool
+  isValidQuery(Name queryName);
+
 NDNREVOKE_PUBLIC_WITH_TESTS_ELSE_PRIVATE:
   ndn::Face& m_face;
   CtConfig m_config;

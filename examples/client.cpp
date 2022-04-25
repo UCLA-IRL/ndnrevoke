@@ -111,13 +111,16 @@ main(int argc, char* argv[])
   );
 
   //query for certificate
-  scheduler.schedule(CHECKOUT_INTERVAL, [&] {
+  scheduler.schedule(CHECKOUT_INTERVAL *2, [&] {
     //construct interest
+    std::cout << "Constructing Cert Interest" << std::endl;
     Interest certInterest(cert.getName());
-    interest.setForwardingHint({Name("/ndn/CT")});
-    face.expressInterest(interest, [] (auto& interest, auto& data) {
+    certInterest.setForwardingHint({Name("/ndn/CT")});
+    face.expressInterest(certInterest, [] (auto& interest, auto& data) {
       std::cout << "Received Data " << data << std::endl;
-    }, nullptr, nullptr
+    }, nullptr, [] (auto& Interest) {
+        std::cout << "Timeout" << std::endl;
+      }
     );
    }
   );
