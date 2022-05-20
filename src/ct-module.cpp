@@ -171,7 +171,13 @@ CtModule::onQuery(const Interest& query) {
     return;
   }
   if (certName.at(record::Record::KEY_OFFSET).equals(Name::Component("KEY"))) {
-    m_face.put(getCertificateState(certName)->cert);
+    auto certState = getCertificateState(certName);
+    if (certState) {
+      m_face.put(certState->cert);
+    } else {
+      //return a nack
+      m_face.put(*prepareNack(certName, m_config.nackFreshnessPeriod));
+    }
     return;
   }
 
@@ -225,6 +231,23 @@ CtModule::prepareNack(const CertificateState& certState, Name::Component publish
   const auto& identity = pib.getIdentity(m_config.ctPrefix);
 
   return state.genNack(identity.getDefaultKey().getName(), freshnessPeriod);
+}
+
+std::shared_ptr<nack::Nack>
+CtModule::prepareNack(const Name& certName, ndn::time::milliseconds freshnessPeriod) {
+  std::shared_ptr<nack::Nack> nack = std::make_shared<nack::Nack>();
+
+  auto nackName = certName;
+  nackName.append("nack").appendTimestamp();  
+
+  nack->setName(nackName);
+  nack->setFreshnessPeriod(freshnessPeriod);
+
+  const auto& pib = m_keyChain.getPib();
+  const auto& identity = pib.getIdentity(m_config.ctPrefix);
+  m_keyChain.sign(*nack, signingByKey(identity.getDefaultKey().getName()));
+
+  return nack;
 }
 
 void

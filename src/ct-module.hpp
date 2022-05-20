@@ -49,6 +49,9 @@ NDNREVOKE_PUBLIC_WITH_TESTS_ELSE_PRIVATE:
   prepareNack(const CertificateState& certState, Name::Component publisherId, 
               ndn::time::milliseconds freshnessPeriod = 10_h);
 
+  std::shared_ptr<nack::Nack>
+  prepareNack(const Name& certName, ndn::time::milliseconds freshnessPeriod = 10_h);
+
   void
   registerPrefix();
 
