@@ -98,6 +98,65 @@ BOOST_AUTO_TEST_CASE(HandleQueryAndNack)
   advanceClocks(time::milliseconds(20), 60);
 }
 
+BOOST_AUTO_TEST_CASE(HandleCertQuerySuccess)
+{
+  auto identity = addIdentity(Name("/ndn"));
+  auto key = identity.getDefaultKey();
+  auto cert = key.getDefaultCertificate();
+
+  auto identity2 = addIdentity(Name("/ndn/site1/abc"));
+  auto key2 = identity2.getDefaultKey();
+  auto cert2 = key2.getDefaultCertificate();
+
+  DummyClientFace face(io, m_keyChain, {true, true});
+  CtModule ct(face, m_keyChain, "tests/unit-tests/config-files/config-ct-1", "ct-storage-memory");
+  advanceClocks(time::milliseconds(20), 60);
+
+  auto recordName = cert2.getName();
+  Interest interest(recordName);
+  interest.setCanBePrefix(true);
+
+  state::State state(cert2, m_keyChain);
+
+  face.receive(*state.genSubmissionInterest(Name("/ndn"), cert2, key2.getName()));
+  advanceClocks(time::milliseconds(20), 60);
+
+  face.onSendData.connect([&](const Data& response) {
+    BOOST_CHECK(verifySignature(response, cert2));
+    BOOST_CHECK_EQUAL(response.getContentType(), ndn::tlv::ContentType_Key);
+  });
+  face.receive(interest);
+  advanceClocks(time::milliseconds(20), 60);
+}
+
+BOOST_AUTO_TEST_CASE(HandleCertQueryFailure)
+{
+  auto identity = addIdentity(Name("/ndn"));
+  auto key = identity.getDefaultKey();
+  auto cert = key.getDefaultCertificate();
+
+  auto identity2 = addIdentity(Name("/ndn/site1/abc"));
+  auto key2 = identity2.getDefaultKey();
+  auto cert2 = key2.getDefaultCertificate();
+
+  DummyClientFace face(io, m_keyChain, {true, true});
+  CtModule ct(face, m_keyChain, "tests/unit-tests/config-files/config-ct-1", "ct-storage-memory");
+  advanceClocks(time::milliseconds(20), 60);
+
+  auto recordName = cert2.getName();
+  Interest interest(recordName);
+  interest.setCanBePrefix(true);
+
+  state::State state(cert2, m_keyChain);
+
+  face.onSendData.connect([&](const Data& response) {
+    BOOST_CHECK(verifySignature(response, cert));
+    BOOST_CHECK_EQUAL(response.getContentType(), ndn::tlv::ContentType_Nack);
+  });
+  face.receive(interest);
+  advanceClocks(time::milliseconds(20), 60);
+}
+
 BOOST_AUTO_TEST_SUITE_END() // TestCtModule
 
 } // namespace tests

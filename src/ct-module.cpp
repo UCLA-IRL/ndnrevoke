@@ -3,6 +3,8 @@
 #include "nack-encoder.hpp"
 #include "state.hpp"
 
+#include <iostream>
+
 #include <ndn-cxx/security/signing-helpers.hpp>
 #include <ndn-cxx/security/verification-helpers.hpp>
 #include <ndn-cxx/util/io.hpp>
@@ -163,10 +165,24 @@ CtModule::onQuery(const Interest& query) {
   // Naming Convention: /<prefix>/REVOKE/<keyid>/<issuer>/<version>
   // need to validate query format
   NDN_LOG_TRACE("Received Query " << query);
-
   Name certName = query.getName();
-  auto publisherId = query.getName().at(record::Record::PUBLISHER_OFFSET);
+
+  if (! isValidQuery(certName)) {
+    return;
+  }
+  if (certName.at(record::Record::KEY_OFFSET).equals(Name::Component("KEY"))) {
+    auto certState = getCertificateState(certName);
+    if (certState) {
+      m_face.put(certState->cert);
+    } else {
+      //return a nack
+      m_face.put(*prepareNack(certName, m_config.nackFreshnessPeriod));
+    }
+    return;
+  }
+
   // need more proper handling here
+  auto publisherId = certName.at(record::Record::PUBLISHER_OFFSET);
   certName = record::Record::getCertificateName(certName);
 
   auto state = getCertificateState(certName);
@@ -217,10 +233,33 @@ CtModule::prepareNack(const CertificateState& certState, Name::Component publish
   return state.genNack(identity.getDefaultKey().getName(), freshnessPeriod);
 }
 
+std::shared_ptr<nack::Nack>
+CtModule::prepareNack(const Name& certName, ndn::time::milliseconds freshnessPeriod) {
+  std::shared_ptr<nack::Nack> nack = std::make_shared<nack::Nack>();
+
+  auto nackName = certName;
+  nackName.append("nack").appendTimestamp();  
+
+  nack->setName(nackName);
+  nack->setFreshnessPeriod(freshnessPeriod);
+
+  const auto& pib = m_keyChain.getPib();
+  const auto& identity = pib.getIdentity(m_config.ctPrefix);
+  m_keyChain.sign(*nack, signingByKey(identity.getDefaultKey().getName()));
+
+  return nack;
+}
+
 void
 CtModule::onRegisterFailed(const std::string& reason)
 {
   NDN_LOG_ERROR("Failed to register prefix in local hub's daemon, REASON: " << reason);
+}
+
+bool 
+CtModule::isValidQuery(Name queryName) {
+    return (queryName.at(record::Record::REVOKE_OFFSET).equals(Name::Component("REVOKE")) 
+    || queryName.at(record::Record::KEY_OFFSET).equals(Name::Component("KEY")));
 }
 
 } // namespace ct

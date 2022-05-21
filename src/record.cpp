@@ -5,6 +5,7 @@ namespace record {
 
 const ssize_t Record::PUBLISHER_OFFSET = -1;
 const ssize_t Record::REVOKE_OFFSET = -5;
+const ssize_t Record::KEY_OFFSET = -4;
 
 Record::Record()
 {
@@ -30,7 +31,7 @@ Name Record::getRevocationRecordPrefix(Name certName) {
 }
 
 Name Record::getCertificateName(Name revocationName) {
-    revocationName.set(REVOKE_OFFSET, Name::Component("KEY"));
+    revocationName.set(record::Record::REVOKE_OFFSET, Name::Component("KEY"));
     revocationName.erase(record::Record::PUBLISHER_OFFSET);
     return revocationName;
 }

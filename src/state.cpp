@@ -110,7 +110,7 @@ State::genSubmissionInterest(const Name& ctPrefix, const Certificate& cert, cons
   return interest;
 }
 
-std::shared_ptr<Interest>
+std::shared_ptr<Interest>                           //Change to DATA
 State::genSubmissionInterest(const Name& ctPrefix, const record::Record& record, const Name& signingKeyName)
 {
   // naming convention: /<CT prefix>/CT/submit/<type>/<paramDigest>
