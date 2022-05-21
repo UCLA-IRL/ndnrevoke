@@ -40,6 +40,8 @@ public:
   static Name getCertificateName(Name revocationName);
 };
 
+std::ostream&
+operator<<(std::ostream& os, const Record& record);
 } // namespace record
 } // namespace ndnrevoke
 

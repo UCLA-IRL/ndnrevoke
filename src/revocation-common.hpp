@@ -63,7 +63,8 @@ enum : uint32_t {
   RevocationTimestamp = 201,
   PublicKeyHash = 202,
   RevocationReason = 203,
-  NackReason = 204
+  NackReason = 204,
+  NotBefore = 205
 };
 
 // Revocation Reason

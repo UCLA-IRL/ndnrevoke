@@ -22,6 +22,8 @@ std::string statusToString(tlv::AppendStatus status)
       return "FAILURE_TIMEOUT";
     case tlv::AppendStatus::FAILURE_NX_CERT:
       return "FAILURE_NX_CERT";
+    case tlv::AppendStatus::FAILURE_STORAGE:
+      return "FAILURE_STORAGE";
     case tlv::AppendStatus::NOTINITIALIZED:
       return "NOTINITIALIZED";
     default:

@@ -1,4 +1,5 @@
 #include "record.hpp"
+#include "record-encoder.hpp"
 
 namespace ndnrevoke {
 namespace record {
@@ -34,6 +35,31 @@ Name Record::getCertificateName(Name revocationName) {
     revocationName.set(record::Record::REVOKE_OFFSET, Name::Component("KEY"));
     revocationName.erase(record::Record::PUBLISHER_OFFSET);
     return revocationName;
+}
+
+std::ostream&
+operator<<(std::ostream& os, const Record& record)
+{
+  os << "Name: " << record.getName() << "\n"
+     << "MetaInfo: [" << record.getMetaInfo() << "]\n";
+
+  if (record.hasContent()) {
+    os << "Content: [" << record.getContent().value_size() << " bytes]\n";
+    ndn::span<const uint8_t> hash;
+    uint64_t timestamp; 
+    tlv::ReasonCode reason; 
+    uint64_t notBefore;
+    recordtlv::decodeRecordContent2(record.getContent(), hash, timestamp, reason, notBefore);    
+    os << "   Public Key Hash: [" <<  ndn::toHex(hash) << "]\n"
+       << "   Revocation Timestamp: [" << timestamp << "]\n"
+       << "   Revocation Reason: [" << static_cast<uint64_t>(reason) << "]\n"
+       << "   Revocation Not Before: [" << notBefore << "]\n";
+  }
+
+  os << "Signature: [type: " << static_cast<ndn::tlv::SignatureTypeValue>(record.getSignatureType())
+     << ", length: "<< record.getSignatureValue().value_size() << "]\n"
+     << "   KeyLocator: [" << record.getKeyLocator().value().getName() << "]\n";
+  return os;
 }
 
 } // namespace record
