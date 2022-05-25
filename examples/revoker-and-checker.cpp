@@ -7,6 +7,7 @@
 
 #include <ndn-cxx/face.hpp>
 #include <ndn-cxx/security/key-chain.hpp>
+#include <ndn-cxx/security/signing-helpers.hpp>
 #include <ndn-cxx/util/scheduler.hpp>
 
 namespace ndnrevoke {
@@ -24,19 +25,21 @@ Certificate
 issueCertificate(const Certificate& ownerCert, const Name& issuerCertName, 
                  const Name::Component& issuer)
 {
-  auto period = ownerCert.getValidityPeriod();
-  Certificate newCert;
+  ndn::security::MakeCertificateOptions opts;
+  opts.issuerId = issuer;
+  opts.version = time::toUnixTimestamp(time::system_clock::now()).count();
+  opts.freshnessPeriod = 24_h;
+  opts.validity = ownerCert.getValidityPeriod();
 
-  Name certName = ownerCert.getKeyName();
-  certName.append(issuer).appendVersion();
-  newCert.setName(certName);
-  newCert.setContent(ownerCert.getContent());
-  SignatureInfo signatureInfo;
-  signatureInfo.setValidityPeriod(period);
-  ndn::security::SigningInfo signingInfo(ndn::security::SigningInfo::SIGNER_TYPE_CERT,
-                                         issuerCertName, signatureInfo);
-  keyChain.sign(newCert, signingInfo);
-  NDN_LOG_TRACE("new cert got signed" << newCert);
+  SignatureInfo sigInfo;
+  ndn::security::SigningInfo sigParam;
+  sigInfo.setKeyLocator(issuerCertName);
+  sigInfo.setValidityPeriod(ownerCert.getValidityPeriod());
+  sigInfo.addCustomTlv(Block(0xF0));
+  sigParam.setSignatureInfo(sigInfo);
+  auto param = signingByCertificate(issuerCertName);
+  auto newCert = keyChain.makeCertificate(ownerCert, sigParam, opts);
+  NDN_LOG_TRACE("new cert got signed: " << newCert);
   return newCert;
 }
 
