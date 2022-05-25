@@ -20,44 +20,80 @@ static ndn::Scheduler scheduler(face.getIoService());
 static const ndn::time::milliseconds CHECKOUT_INTERVAL = 10_ms;
 static const Name ledgerPrefix = Name("/ndn/edu/ucla/v2/LEDGER");
 
+Certificate
+issueCertificate(const Certificate& ownerCert, const Name& issuerCertName, 
+                 const Name::Component& issuer)
+{
+  auto period = ownerCert.getValidityPeriod();
+  Certificate newCert;
+
+  Name certName = ownerCert.getKeyName();
+  certName.append(issuer).appendVersion();
+  newCert.setName(certName);
+  newCert.setContent(ownerCert.getContent());
+  SignatureInfo signatureInfo;
+  signatureInfo.setValidityPeriod(period);
+  ndn::security::SigningInfo signingInfo(ndn::security::SigningInfo::SIGNER_TYPE_CERT,
+                                         issuerCertName, signatureInfo);
+  keyChain.sign(newCert, signingInfo);
+  NDN_LOG_TRACE("new cert got signed" << newCert);
+  return newCert;
+}
+
 static int
 main(int argc, char* argv[])
 {
-  ndn::security::pib::Identity identity;
+  ndn::security::pib::Identity issuerId, ownerId;
   try {
-    identity = keyChain.getPib().getIdentity(Name("/ndn/edu/ucla/v2/cs/producer"));
+    issuerId = keyChain.getPib().getIdentity(Name("/ndn/edu/ucla/v2/cs"));
   }
   catch (const std::exception&) {
-    identity = keyChain.createIdentity(Name("/ndn/edu/ucla/v2/cs/producer"));
+    issuerId = keyChain.createIdentity(Name("/ndn/edu/ucla/v2/cs"));
   }
 
-  auto key = identity.getDefaultKey();
-  auto cert = key.getDefaultCertificate();
+  try {
+    ownerId = keyChain.getPib().getIdentity(Name("/ndn/edu/ucla/v2/cs/producer"));
+  }
+  catch (const std::exception&) {
+    ownerId = keyChain.createIdentity(Name("/ndn/edu/ucla/v2/cs/producer"));
+  }
 
+  auto issuerKey = issuerId.getDefaultKey();
+  auto issuerCert = issuerKey.getDefaultCertificate();
+  auto ownerKey = ownerId.getDefaultKey();
 
+  // use issuer to sign owner
+  auto ownerCert = issueCertificate(ownerKey.getDefaultCertificate(), issuerCert.getName(),
+                                    Name::Component("cs-signer"));
   // init append client for revoker and callbacks for checker
-  append::HandleClient client(identity.getName(), face, keyChain);
+  append::HandleClient client(ownerId.getName(), face, keyChain);
   checker::Checker checker(face);
 
 
   // scheduled record appending after prefix registeration
   scheduler.schedule(CHECKOUT_INTERVAL, [&] {
     revoker::Revoker revoker(keyChain);
-    auto record = revoker.revokeAsOwner(cert, tlv::ReasonCode::SUPERSEDED, 
+    auto ownerRecord = revoker.revokeAsOwner(ownerCert, tlv::ReasonCode::SUPERSEDED, 
+                                        time::toUnixTimestamp(time::system_clock::now()).count());
+    auto issuerRecord = revoker.revokeAsIssuer(ownerCert, tlv::ReasonCode::SUPERSEDED, 
                                         time::toUnixTimestamp(time::system_clock::now()).count());
     Name appendPrefix = Name(ledgerPrefix).append("append");
-    client.appendData(appendPrefix, {*record},
+    client.appendData(appendPrefix, {*ownerRecord, *issuerRecord},
       [&] (auto& i) {
           Block content = i.getContent();
           content.parse();
-          uint64_t status = readNonNegativeInteger(*content.elements_begin());
-          NDN_LOG_INFO("Append status [SUCCESS]: " << append::statusToString(static_cast<tlv::AppendStatus>(status)));
+          for (auto elem : content.elements()) {
+            uint64_t status = readNonNegativeInteger(elem);
+            NDN_LOG_INFO("Append status [SUCCESS]: " << append::statusToString(static_cast<tlv::AppendStatus>(status)));
+          }
       },
       [&] (auto& i) {
           Block content = i.getContent();
           content.parse();
-          uint64_t status = readNonNegativeInteger(*content.elements_begin());
-          NDN_LOG_INFO("Append status [FAILURE]: " << append::statusToString(static_cast<tlv::AppendStatus>(status)));
+          for (auto elem : content.elements()) {
+            uint64_t status = readNonNegativeInteger(elem);
+            NDN_LOG_INFO("Append status [FAILURE]: " << append::statusToString(static_cast<tlv::AppendStatus>(status)));
+          }
       },
       [] (auto&&) {
           NDN_LOG_INFO("Append Timeout");
@@ -71,7 +107,20 @@ main(int argc, char* argv[])
 
   // query for record
   scheduler.schedule(CHECKOUT_INTERVAL * 2, [&] {
-   checker.doOwnerCheck(ledgerPrefix, cert, 
+   checker.doOwnerCheck(ledgerPrefix, ownerCert, 
+    [] (auto& i) {
+      // on valid, should be a nack data
+      NDN_LOG_INFO("Nack Data: " << i);
+    },
+    [] (auto& i) {
+      // on revoked, should be a record
+      NDN_LOG_INFO("Record Data: " << i);
+    },
+    [] (auto i) {
+      NDN_LOG_INFO("Failure Reason: " << i);
+    });
+
+    checker.doIssuerCheck(ledgerPrefix, ownerCert, 
     [] (auto& i) {
       // on valid, should be a nack data
       NDN_LOG_INFO("Nack Data: " << i);

@@ -41,14 +41,17 @@ Revoker::revokeAs(const Certificate& certData, tlv::ReasonCode reason, uint64_t 
   record->setContentType(ndn::tlv::ContentType_Key);
   record->setContent(recordtlv::encodeRecordContent2(hash, reason, notBefore));
 
-  Name signer = certData.getKeyLocator().value().getName();
-  if (Certificate::isValidName(signer)) {
-    // sign using certificate
-     m_keyChain.sign(*record, signingByCertificate(signer));
+  if (id == Name::Component("self")) {
+    auto selfIdentity = m_keyChain.getPib().getIdentity(certData.getIdentity());
+    auto selfCert = selfIdentity.getDefaultKey().getDefaultCertificate();
+    m_keyChain.sign(*record, signingByCertificate(selfCert));
+  }
+  else if (id == certData.getIssuerId()) {
+    auto issuerName = certData.getKeyLocator().value().getName();
+    m_keyChain.sign(*record, signingByCertificate(issuerName));
   }
   else {
-    // sign with key
-    m_keyChain.sign(*record, signingByKey(signer));
+    NDN_THROW(std::runtime_error("Neither Issuer or Owner for is in the keychain"));
   }
   return record;
 }
