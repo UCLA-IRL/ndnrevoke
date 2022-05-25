@@ -25,20 +25,16 @@ Certificate
 issueCertificate(const Certificate& ownerCert, const Name& issuerCertName, 
                  const Name::Component& issuer)
 {
+  Certificate newCert;
   ndn::security::MakeCertificateOptions opts;
+  ndn::security::SigningInfo signer;
+
   opts.issuerId = issuer;
   opts.version = time::toUnixTimestamp(time::system_clock::now()).count();
-  opts.freshnessPeriod = 24_h;
+  opts.freshnessPeriod = 1_h;
   opts.validity = ownerCert.getValidityPeriod();
-
-  SignatureInfo sigInfo;
-  ndn::security::SigningInfo sigParam;
-  sigInfo.setKeyLocator(issuerCertName);
-  sigInfo.setValidityPeriod(ownerCert.getValidityPeriod());
-  sigInfo.addCustomTlv(Block(0xF0));
-  sigParam.setSignatureInfo(sigInfo);
-  auto param = signingByCertificate(issuerCertName);
-  auto newCert = keyChain.makeCertificate(ownerCert, sigParam, opts);
+  signer.setSigningCertName(issuerCertName);
+  newCert = keyChain.makeCertificate(ownerCert, signer, opts);
   NDN_LOG_TRACE("new cert got signed: " << newCert);
   return newCert;
 }
