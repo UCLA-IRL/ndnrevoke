@@ -24,8 +24,8 @@ jobs:
         include:
           - compiler: g++-7
             os: ubuntu-18.04
-          - compiler: clang++-6.0
-            os: ubuntu-18.04
+          # - compiler: clang++-6.0
+          #   os: ubuntu-18.04
     runs-on: ${{ matrix.os }}
     env:
       CXX: ${{ matrix.compiler }}

@@ -26,6 +26,6 @@ if [[ $JOB_NAME == *"code-coverage" ]]; then
             --demangle-cpp \
             --legend \
             --output-directory build/lcov \
-            --title "ndncert unit tests" \
+            --title "ndnrevoke unit tests" \
             build/coverage.info
 fi
