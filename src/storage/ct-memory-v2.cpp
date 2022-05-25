@@ -3,8 +3,6 @@
 namespace ndnrevoke {
 namespace ct {
 
-NDN_LOG_INIT(ndnrevoke.ct);
-
 const std::string CtMemoryV2::STORAGE_TYPE = "ct-storage-memory-v2";
 NDNREVOKE_REGISTER_CT_STORAGE_V2(CtMemoryV2);
 

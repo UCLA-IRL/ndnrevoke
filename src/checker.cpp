@@ -63,7 +63,6 @@ Checker::doCheck(const Name ledgerPrefix, const Certificate& certData, const Nam
 void
 Checker::onData(const Interest&, const Data& data)
 {
-  NDN_LOG_INFO(data);
   auto iter = m_states.find(data.getName());
   if (iter == m_states.end()) {
     NDN_LOG_ERROR("cannot get checker state");
@@ -121,9 +120,21 @@ Checker::onTimeout(const Interest& interest)
   if (iter == m_states.end()) {
     NDN_LOG_ERROR("cannot get checker state");
   }
-  NDN_LOG_ERROR("Interest " << interest << " timeout");
-  iter->second.fCb("Interest timeout");
-  m_states.erase(iter);
+  if (iter->second.remainingRetry-- > 0) {
+    NDN_LOG_DEBUG("Retrying Interest " << interest <<
+                  ", remaining retries " << iter->second.remainingRetry);
+    
+    Interest retry(interest);
+    retry.refreshNonce();
+    m_face.expressInterest(retry,
+                           std::bind(&Checker::onData, this, _1, _2),
+                           std::bind(&Checker::onNack, this, _1, _2),
+                           std::bind(&Checker::onTimeout, this, _1));    
+  }
+  else {
+    iter->second.fCb("Interest timeout");
+    m_states.erase(iter);
+  }
 }
 
 } // namespace checker

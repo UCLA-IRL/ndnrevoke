@@ -23,6 +23,7 @@ public:
     onValidCallback vCb;
     onRevokedCallback rCb;
     onFailureCallback fCb;
+    int remainingRetry = 3;
   };
   explicit
   Checker(ndn::Face& face);
