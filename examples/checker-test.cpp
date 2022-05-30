@@ -60,7 +60,7 @@ test_fetching(Name ledgerPrefix, int intervalSec)
   for (size_t j = 0; j < certStorage.size(); j++)
   {
     std::cout<<"Remaining tries: "<< certStorage.size() - j << std::endl;
-    int randChoice = std::experimental::randint(0, static_cast<int>(certStorage.size()));
+    int randChoice = std::experimental::randint(0, static_cast<int>(certStorage.size() - 1));
     int randDelay = std::experimental::randint(0, static_cast<int>(0.25 * baseDelay.count()));
     Certificate certChoice = certStorage[randChoice];
     std::cout << "Checking Cert: "<< certChoice.getName() << std::endl;
