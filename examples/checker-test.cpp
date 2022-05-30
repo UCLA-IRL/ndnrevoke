@@ -26,11 +26,9 @@ NDN_LOG_INIT(ndnrevoke.example);
 static ndn::Face face;
 static ndn::KeyChain keyChain;
 static ndn::Scheduler scheduler(face.getIoService());
-static const Name ledgerPrefix = Name("/ndn/edu/ucla/v2/LEDGER");
 
 static double fetch_time = 0;
 static std::vector<ndn::security::Certificate> certStorage;
-static std::string producer_prefixes = "/ndn/edu/ucla/v2/cs";
 
 void
 read_certs(std::string certDir)
@@ -54,34 +52,8 @@ read_certs(std::string certDir)
   }
 }
 
-void
-prepare_identities()
-{
-  for (size_t j = 0; j < certStorage.size(); j++){
-    ndn::security::pib::Identity identity;
-    try {
-      identity = keyChain.getPib().getIdentity(Name(producer_prefixes + std::string("/producer") + std::to_string(j)));
-    }
-    catch (const std::exception&) {
-      identity = keyChain.createIdentity(Name(producer_prefixes + std::string("/producer") + std::to_string(j)));
-    }
-    auto key = identity.getDefaultKey();
-    certStorage.push_back(key.getDefaultCertificate());
-  }
-}
-
-void
-delete_identities()
-{
-  namespace fs = std::filesystem;
-  for (auto& cert : certStorage) {
-    auto id = keyChain.getPib().getIdentity(cert.getIdentity());
-    keyChain.deleteIdentity(id);
-  }
-}
-
 void 
-test_fetching(int intervalSec)
+test_fetching(Name ledgerPrefix, int intervalSec)
 {
   auto seconds = ndn::time::seconds(intervalSec);
   ndn::time::milliseconds baseDelay(seconds);
@@ -149,11 +121,14 @@ main(int argc, char** argv)
   namespace po = boost::program_options;
   std::string certDir;
   std::string interval("1");
+  std::string ledgerPrefix;
   po::options_description description;
   description.add_options()
     ("help,h", "produce help message")
     ("cert-dir,d", po::value<std::string>(&certDir),
-                   "directory name of the certificate to be imported")
+                   "directory name of certificates to be imported")
+    ("ledger,l", po::value<std::string>(&ledgerPrefix),
+                   "ledger prefix")
     ("interval,i", po::value<std::string>(&interval),
                    "intervals of record fetching");
   po::variables_map vm;
@@ -186,7 +161,7 @@ main(int argc, char** argv)
   }
 
   read_certs(certDir);
-  test_fetching(std::stoul(interval));
+  test_fetching(Name(ledgerPrefix), std::stoul(interval));
   return 0;
 }
 
