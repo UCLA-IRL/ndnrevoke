@@ -37,7 +37,7 @@ public:
   static const ssize_t KEY_OFFSET;
 
   static Name getRevocationRecordPrefix(Name certName);
-  static Name getCertificateName(Name revocationName);
+  static Name getCertificateName(const Name recordName);
 };
 
 std::ostream&

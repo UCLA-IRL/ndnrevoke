@@ -42,6 +42,7 @@ Checker::doCheck(const Name ledgerPrefix, const Certificate& certData, const Nam
   recordName.append(publisher);
   Interest interest(recordName);
   interest.setMustBeFresh(true);
+  interest.setCanBePrefix(true);
   interest.setForwardingHint({ledgerPrefix});
 
   CheckerCbs cbs;
@@ -63,41 +64,37 @@ Checker::doCheck(const Name ledgerPrefix, const Certificate& certData, const Nam
 void
 Checker::onData(const Interest&, const Data& data)
 {
-  auto iter = m_states.find(data.getName());
-  if (iter == m_states.end()) {
-    NDN_LOG_ERROR("cannot get checker state");
-  }
   // it this a record?
-  try {
-    auto convertFromRecord = record::Record::getCertificateName(data.getName());
-    if (Certificate::isValidName(convertFromRecord)) {
-      // TODO: validation
-      iter->second.rCb(record::Record(data));
-      m_states.erase(iter);
-      return;
+  Name dataName = data.getName();
+  Name certName;
+  certName = record::Record::getCertificateName(dataName);
+  NDN_LOG_TRACE(certName);
+  if (Certificate::isValidName(certName) &&
+      dataName.at(record::Record::REVOKE_OFFSET) == Name::Component("REVOKE")) {
+    // TODO: validation
+    auto iter = m_states.find(data.getName());
+    if (iter == m_states.end()) {
+      NDN_LOG_ERROR("cannot get checker state");
     }
-  }
-  catch (std::exception& e) {
-    // TODO: do sth
+    iter->second.rCb(record::Record(data));
+    m_states.erase(iter);
+    return;
   }
 
   // is this a nack?
-  try {
-    auto convertFromRecord = nack::Nack::getCertificateName(data.getName());
-    if (Certificate::isValidName(convertFromRecord)) {
-      // TODO: validation
-      iter->second.vCb(nack::Nack(data));
-      m_states.erase(iter);
-      return;
+  certName = nack::Nack::getCertificateName(dataName);
+  NDN_LOG_TRACE(certName);
+  if (Certificate::isValidName(certName) && 
+      dataName.at(nack::Nack::TIMESTAMP_OFFSET).isTimestamp()) {
+    // TODO: validation
+    auto iter = m_states.find(data.getName().getPrefix(-2));
+    if (iter == m_states.end()) {
+      NDN_LOG_ERROR("cannot get checker state");
     }
+    iter->second.vCb(nack::Nack(data));
+    m_states.erase(iter);
+    return;
   }
-  catch (std::exception& e) {
-    // TODO: do sth
-  }
-  
-  // if not record and not nack
-  iter->second.fCb("unknown data type");
-  m_states.erase(iter);
 }
 
 

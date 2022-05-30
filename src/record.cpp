@@ -31,10 +31,11 @@ Name Record::getRevocationRecordPrefix(Name certName) {
     return certName;
 }
 
-Name Record::getCertificateName(Name revocationName) {
-    revocationName.set(record::Record::REVOKE_OFFSET, Name::Component("KEY"));
-    revocationName.erase(record::Record::PUBLISHER_OFFSET);
-    return revocationName;
+Name Record::getCertificateName(const Name recordName) {
+    Name certName(recordName);
+    certName.set(record::Record::REVOKE_OFFSET, Name::Component("KEY"));
+    certName.erase(record::Record::PUBLISHER_OFFSET);
+    return certName;
 }
 
 std::ostream&

@@ -29,7 +29,7 @@ public:
   static const ssize_t REVOKE_OFFSET;
 
   static Name
-  getCertificateName(Name revocationName);
+  getCertificateName(const Name nackName);
 };
 
 } // namespace nack

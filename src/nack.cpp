@@ -28,10 +28,10 @@ Nack::Nack(const Block& block)
 }
 
 Name
-Nack::getCertificateName(Name revocationName) {
-    revocationName.set(nack::Nack::REVOKE_OFFSET, Name::Component("KEY"));
-    revocationName.erase(nack::Nack::PUBLISHER_OFFSET);
-    return revocationName;
+Nack::getCertificateName(const Name nackName) {
+  Name certName(nackName);
+  certName.set(nack::Nack::REVOKE_OFFSET, Name::Component("KEY"));
+  return certName.getPrefix(-3);;
 }
 
 } // namespace nack
