@@ -95,7 +95,7 @@ test_fetching(Name ledgerPrefix, int intervalSec)
       [&] {
         clock_gettime(CLOCK_REALTIME, &begin);
         checker.doOwnerCheck(ledgerPrefix, certChoice,
-          [begin, j] (auto& i) {
+          [begin, j, max_iterations] (auto& i) {
             // on valid, should be a nack data
             struct timespec end;
             clock_gettime(CLOCK_REALTIME, &end);
@@ -104,12 +104,12 @@ test_fetching(Name ledgerPrefix, int intervalSec)
             double elapsed = sec + nsec * 1e-9;
             fetch_time += elapsed;
             if (j == certStorage.size() - 1) {
-              std::cout << "Fetching Time: " << fetch_time / 100.0 << std::endl;
+              std::cout << "Fetching Time: " << fetch_time / static_cast<double>(max_iterations) << std::endl;
             }
             NDN_LOG_TRACE("Nack Data: " << i);
             face.shutdown();
           },
-          [begin, j] (auto& i) {
+          [begin, j, max_iterations] (auto& i) {
             // on revoked, should be a record
             struct timespec end;
             clock_gettime(CLOCK_REALTIME, &end);
@@ -118,7 +118,7 @@ test_fetching(Name ledgerPrefix, int intervalSec)
             double elapsed = sec + nsec * 1e-9;
             fetch_time += elapsed;
             if (j == certStorage.size() - 1) {
-              std::cout << "Fetching Time: "<< fetch_time / 100.0 << std::endl;
+              std::cout << "Fetching Time: "<< fetch_time / static_cast<double>(max_iterations) << std::endl;
             }
             NDN_LOG_TRACE("Record Data: " << i);
             face.shutdown();
