@@ -30,6 +30,7 @@ static ndn::Scheduler scheduler(face.getIoService());
 static double fetch_time = 0;
 static std::vector<ndn::security::Certificate> certStorage;
 static std::vector<int> indexSeq;
+static bool fullSeq = false;
 
 void
 read_sequence(std::string seqFilePath)
@@ -78,13 +79,15 @@ test_fetching(Name ledgerPrefix, int intervalSec)
 {
   auto seconds = ndn::time::seconds(intervalSec);
   ndn::time::milliseconds baseDelay(seconds);
-  for (size_t j = 0; j < certStorage.size(); j++)
+  Certificate certChoice;
+  size_t max_iterations = indexSeq.size() && fullSeq? indexSeq.size() : certStorage.size();
+  for (size_t j = 0; j < max_iterations; j++)
   {
-    std::cout<<"Remaining tries: "<< certStorage.size() - j << std::endl;
-    int randChoice = std::experimental::randint(0, static_cast<int>(certStorage.size() - 1));
+    std::cout<<"Remaining tries: "<< max_iterations - j << std::endl;
     int randDelay = std::experimental::randint(0, static_cast<int>(0.25 * baseDelay.count()));
+    int randChoice = indexSeq.size()? indexSeq.at(j) : std::experimental::randint(0, static_cast<int>(certStorage.size() - 1));
     Certificate certChoice = certStorage[randChoice];
-    std::cout << "Checking Cert: "<< certChoice.getName() << std::endl;
+    std::cout << "Checking Cert: " << certChoice.getName() << std::endl;
     checker::Checker checker(face);
     struct timespec begin;
     // query for record
@@ -153,6 +156,8 @@ main(int argc, char** argv)
                    "ledger prefix")
     ("sequence,s", po::value<std::string>(&seqFilePath),
                    "sequence file")
+    ("full,f", po::bool_switch(&fullSeq),
+              "executing the full sequence")
     ("interval,i", po::value<std::string>(&interval),
                    "intervals of record fetching");
   po::variables_map vm;
