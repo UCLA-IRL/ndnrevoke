@@ -29,6 +29,27 @@ static ndn::Scheduler scheduler(face.getIoService());
 
 static double fetch_time = 0;
 static std::vector<ndn::security::Certificate> certStorage;
+static std::vector<int> indexSeq;
+
+void
+read_sequence(std::string seqFilePath)
+{
+  std::ifstream file(seqFilePath);
+  std::string read;
+  std::vector<int> uniqued;
+  while (std::getline(file, read)) {
+    int certIndex = std::stoul(read);
+    indexSeq.push_back(certIndex);
+    if (std::find(uniqued.begin(), uniqued.end(), certIndex) == uniqued.end()) {
+      uniqued.push_back(certIndex);
+    }
+  }
+  if (certStorage.size() != uniqued.size()) {
+    std::cerr << "sequence index " << indexSeq.size()
+              << " and cert number " << certStorage.size() << " not match!" << std::endl;
+    exit(1);
+  }
+}
 
 void
 read_certs(std::string certDir)
@@ -122,6 +143,7 @@ main(int argc, char** argv)
   std::string certDir;
   std::string interval("1");
   std::string ledgerPrefix;
+  std::string seqFilePath;
   po::options_description description;
   description.add_options()
     ("help,h", "produce help message")
@@ -129,6 +151,8 @@ main(int argc, char** argv)
                    "directory name of certificates to be imported")
     ("ledger,l", po::value<std::string>(&ledgerPrefix),
                    "ledger prefix")
+    ("sequence,s", po::value<std::string>(&seqFilePath),
+                   "sequence file")
     ("interval,i", po::value<std::string>(&interval),
                    "intervals of record fetching");
   po::variables_map vm;
@@ -161,6 +185,7 @@ main(int argc, char** argv)
   }
 
   read_certs(certDir);
+  read_sequence(seqFilePath);
   test_fetching(Name(ledgerPrefix), std::stoul(interval));
   return 0;
 }
