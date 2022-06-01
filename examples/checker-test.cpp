@@ -76,7 +76,6 @@ read_certs(std::string certDir)
   }
 }
 
-
 void
 compute_measureAvg()
 {
@@ -87,11 +86,11 @@ compute_measureAvg()
       avg += measureIt / certIt.size();
     }
     if (certIt.size()) {
-      std::cout << "Cert " << index++ << ": " << avg << "s\n";
+      std::cout << "Cert " << index << ": " << avg << "s\n";
     }
+    index++;
   }
 }
-
 
 void 
 test_fetching(Name ledgerPrefix, int intervalSec)
@@ -125,7 +124,7 @@ test_fetching(Name ledgerPrefix, int intervalSec)
             measureCount[randChoice].push_back(elapsed);
 
             fetch_time += elapsed;
-            if (j == certStorage.size() - 1) {
+            if (j == max_iterations - 1) {
               std::cout << "Fetching Time: " << fetch_time / static_cast<double>(max_iterations) << std::endl;
               compute_measureAvg();
             }
@@ -143,8 +142,8 @@ test_fetching(Name ledgerPrefix, int intervalSec)
             measureCount[randChoice].push_back(elapsed);
 
             fetch_time += elapsed;
-            if (j == certStorage.size() - 1) {
-              std::cout << "Fetching Time: "<< fetch_time / static_cast<double>(max_iterations) << std::endl;\
+            if (j == max_iterations - 1) {
+              std::cout << "Fetching Time: "<< fetch_time / static_cast<double>(max_iterations) << std::endl;
               compute_measureAvg();
             }
             NDN_LOG_TRACE("Record Data: " << i);
