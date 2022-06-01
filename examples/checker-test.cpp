@@ -30,6 +30,7 @@ static ndn::Scheduler scheduler(face.getIoService());
 static double fetch_time = 0;
 static std::vector<ndn::security::Certificate> certStorage;
 static std::vector<int> indexSeq;
+static std::vector<std::vector<double>> measureCount;
 static bool fullSeq = false;
 
 void
@@ -50,6 +51,7 @@ read_sequence(std::string seqFilePath)
               << " and cert number " << certStorage.size() << " not match!" << std::endl;
     exit(1);
   }
+  measureCount.resize(certStorage.size());
 }
 
 void
@@ -74,6 +76,21 @@ read_certs(std::string certDir)
   }
 }
 
+
+void
+compute_measureAvg()
+{
+  size_t index = 0;
+  for (auto& certIt : measureCount) {
+    double avg = 0;
+    for (auto& measureIt : certIt) {
+      avg += measureIt / certIt.size();
+    }
+    std::cout << "Cert " << index++ << ": " << avg << "ms\n";
+  }
+}
+
+
 void 
 test_fetching(Name ledgerPrefix, int intervalSec)
 {
@@ -95,30 +112,38 @@ test_fetching(Name ledgerPrefix, int intervalSec)
       [&] {
         clock_gettime(CLOCK_REALTIME, &begin);
         checker.doOwnerCheck(ledgerPrefix, certChoice,
-          [begin, j, max_iterations] (auto& i) {
+          [begin, j, max_iterations, randChoice] (auto& i) {
             // on valid, should be a nack data
             struct timespec end;
             clock_gettime(CLOCK_REALTIME, &end);
             long sec = end.tv_sec - begin.tv_sec;
             long nsec = end.tv_nsec - begin.tv_nsec;
             double elapsed = sec + nsec * 1e-9;
+
+            measureCount[randChoice].push_back(elapsed);
+
             fetch_time += elapsed;
             if (j == certStorage.size() - 1) {
               std::cout << "Fetching Time: " << fetch_time / static_cast<double>(max_iterations) << std::endl;
+              compute_measureAvg();
             }
             NDN_LOG_TRACE("Nack Data: " << i);
             face.shutdown();
           },
-          [begin, j, max_iterations] (auto& i) {
+          [begin, j, max_iterations, randChoice] (auto& i) {
             // on revoked, should be a record
             struct timespec end;
             clock_gettime(CLOCK_REALTIME, &end);
             long sec = end.tv_sec - begin.tv_sec;
             long nsec = end.tv_nsec - begin.tv_nsec;
             double elapsed = sec + nsec * 1e-9;
+
+            measureCount[randChoice].push_back(elapsed);
+
             fetch_time += elapsed;
             if (j == certStorage.size() - 1) {
-              std::cout << "Fetching Time: "<< fetch_time / static_cast<double>(max_iterations) << std::endl;
+              std::cout << "Fetching Time: "<< fetch_time / static_cast<double>(max_iterations) << std::endl;\
+              compute_measureAvg();
             }
             NDN_LOG_TRACE("Record Data: " << i);
             face.shutdown();
