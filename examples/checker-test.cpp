@@ -86,7 +86,9 @@ compute_measureAvg()
     for (auto& measureIt : certIt) {
       avg += measureIt / certIt.size();
     }
-    std::cout << "Cert " << index++ << ": " << avg << "ms\n";
+    if (certIt.size()) {
+      std::cout << "Cert " << index++ << ": " << avg << "s\n";
+    }
   }
 }
 
