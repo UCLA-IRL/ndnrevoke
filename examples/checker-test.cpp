@@ -216,7 +216,9 @@ main(int argc, char** argv)
   }
 
   read_certs(certDir);
-  read_sequence(seqFilePath);
+  if (!seqFilePath.empty()) {
+    read_sequence(seqFilePath);
+  }
   test_fetching(Name(ledgerPrefix), std::stoul(interval));
   return 0;
 }
