@@ -1,18 +1,18 @@
-#include "ct-memory-v2.hpp"
+#include "ct-memory.hpp"
 
 namespace ndnrevoke {
 namespace ct {
 
-const std::string CtMemoryV2::STORAGE_TYPE = "ct-storage-memory-v2";
-NDNREVOKE_REGISTER_CT_STORAGE_V2(CtMemoryV2);
+const std::string CtMemory::STORAGE_TYPE = "ct-storage-memory";
+NDNREVOKE_REGISTER_CT_STORAGE(CtMemory);
 
-CtMemoryV2::CtMemoryV2(const Name& ctName, const std::string& path)
-  : CtStorageV2()
+CtMemory::CtMemory(const Name& ctName, const std::string& path)
+  : CtStorage()
 {
 }
 
 void
-CtMemoryV2::addData(const Data& data)
+CtMemory::addData(const Data& data)
 {
   Name name = data.getName();
   auto search = m_list.find(name);
@@ -23,7 +23,7 @@ CtMemoryV2::addData(const Data& data)
 }
 
 Data
-CtMemoryV2::getData(const Name& name)
+CtMemory::getData(const Name& name)
 {
   auto search = m_list.find(name);
   if (search == m_list.end()) {
@@ -33,7 +33,7 @@ CtMemoryV2::getData(const Name& name)
 }
 
 void
-CtMemoryV2::deleteData(const Name& name)
+CtMemory::deleteData(const Name& name)
 {
   auto search = m_list.find(name);
   if (search == m_list.end()) {

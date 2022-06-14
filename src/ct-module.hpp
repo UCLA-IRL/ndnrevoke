@@ -1,7 +1,7 @@
-#ifndef NDNREVOKE_CT_MODULE_V2_HPP
-#define NDNREVOKE_CT_MODULE_V2_HPP
+#ifndef NDNREVOKE_CT_MODULE_HPP
+#define NDNREVOKE_CT_MODULE_HPP
 
-#include "storage/ct-storage-v2.hpp"
+#include "storage/ct-storage.hpp"
 #include "append/handle-ct.hpp"
 #include "ct-configuration.hpp"
 #include "nack.hpp"
@@ -12,15 +12,15 @@
 namespace ndnrevoke {
 namespace ct {
 
-class CtModuleV2 : boost::noncopyable
+class CtModule : boost::noncopyable
 {
 public:
-  CtModuleV2(ndn::Face& face, ndn::KeyChain& keyChain, const std::string& configPath,
-           const std::string& storageType = "ct-storage-memory-v2");
+  CtModule(ndn::Face& face, ndn::KeyChain& keyChain, const std::string& configPath,
+           const std::string& storageType = "ct-storage-memory");
 
-  ~CtModuleV2();
+  ~CtModule();
 
-  const std::unique_ptr<CtStorageV2>&
+  const std::unique_ptr<CtStorage>&
   getCtStorage()
   {
     return m_storage;
@@ -56,7 +56,7 @@ NDNREVOKE_PUBLIC_WITH_TESTS_ELSE_PRIVATE:
   ndn::Face& m_face;
   CtConfig m_config;
   ndn::KeyChain& m_keyChain;
-  std::unique_ptr<CtStorageV2> m_storage;
+  std::unique_ptr<CtStorage> m_storage;
   std::list<ndn::RegisteredPrefixHandle> m_registeredPrefixHandles;
   std::list<ndn::InterestFilterHandle> m_interestFilterHandles;
 

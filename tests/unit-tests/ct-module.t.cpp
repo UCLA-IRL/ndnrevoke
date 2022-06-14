@@ -1,4 +1,4 @@
-#include "ct-module-v2.hpp"
+#include "ct-module.hpp"
 #include "test-common.hpp"
 #include "revoker.hpp"
 #include "checker.hpp"
@@ -15,7 +15,7 @@ BOOST_FIXTURE_TEST_SUITE(TestCtModuleV2, IdentityManagementTimeFixture)
 BOOST_AUTO_TEST_CASE(Initialization)
 {
   DummyClientFace face(io, m_keyChain, {true, true});
-  CtModuleV2 ct(face, m_keyChain, "tests/unit-tests/config-files/config-ct-1", "ct-storage-memory-v2");
+  CtModule ct(face, m_keyChain, "tests/unit-tests/config-files/config-ct-1", "ct-storage-memory");
   BOOST_CHECK_EQUAL(ct.getCtConf().ctPrefix, Name("/ndn"));
 
   advanceClocks(time::milliseconds(20), 60);
@@ -34,7 +34,7 @@ BOOST_AUTO_TEST_CASE(HandleQueryAndRecordV2)
   auto cert2 = key2.getDefaultCertificate();
 
   DummyClientFace face(io, m_keyChain, {true, true});
-  CtModuleV2 ct(face, m_keyChain, "tests/unit-tests/config-files/config-ct-1", "ct-storage-memory-v2");
+  CtModule ct(face, m_keyChain, "tests/unit-tests/config-files/config-ct-1", "ct-storage-memory");
   advanceClocks(time::milliseconds(20), 60);
 
   revoker::Revoker revoker(m_keyChain);
@@ -63,7 +63,7 @@ BOOST_AUTO_TEST_CASE(HandleQueryAndNackV2)
   auto cert2 = key2.getDefaultCertificate();
 
   DummyClientFace face(io, m_keyChain, {true, true});
-  CtModuleV2 ct(face, m_keyChain, "tests/unit-tests/config-files/config-ct-1", "ct-storage-memory-v2");
+  CtModule ct(face, m_keyChain, "tests/unit-tests/config-files/config-ct-1", "ct-storage-memory");
   advanceClocks(time::milliseconds(20), 60);
 
   checker::Checker checker(face);

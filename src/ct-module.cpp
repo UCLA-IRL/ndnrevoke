@@ -1,8 +1,6 @@
-#include "ct-module-v2.hpp"
+#include "ct-module.hpp"
 #include "record-encoder.hpp"
 #include "nack-encoder.hpp"
-
-#include <iostream>
 
 #include <ndn-cxx/security/signing-helpers.hpp>
 #include <ndn-cxx/security/verification-helpers.hpp>
@@ -15,23 +13,23 @@ namespace ct {
 
 NDN_LOG_INIT(ndnrevoke.ct);
 
-CtModuleV2::CtModuleV2(ndn::Face& face, ndn::KeyChain& keyChain, const std::string& configPath, const std::string& storageType)
+CtModule::CtModule(ndn::Face& face, ndn::KeyChain& keyChain, const std::string& configPath, const std::string& storageType)
   : m_face(face)
   , m_keyChain(keyChain)
 {
   // load the config and create storage
   m_config.load(configPath);
-  m_storage = CtStorageV2::createCtStorageV2(storageType, m_config.ctPrefix, "");
+  m_storage = CtStorage::createCtStorage(storageType, m_config.ctPrefix, "");
   registerPrefix();
 
   m_handle = std::make_shared<append::HandleCt>(m_config.ctPrefix, face, m_keyChain);
 
   // register prefixes
   m_handle->listenOnTopic(Name(m_config.ctPrefix).append("LEDGER").append("append"),
-                          std::bind(&CtModuleV2::onDataSubmission, this, _1));
+                          std::bind(&CtModule::onDataSubmission, this, _1));
 }
 
-CtModuleV2::~CtModuleV2()
+CtModule::~CtModule()
 {
   for (auto& handle : m_interestFilterHandles) {
     handle.cancel();
@@ -42,7 +40,7 @@ CtModuleV2::~CtModuleV2()
 }
 
 void
-CtModuleV2::registerPrefix()
+CtModule::registerPrefix()
 {
   // register prefixes
   Name prefix = m_config.ctPrefix;
@@ -65,7 +63,7 @@ CtModuleV2::registerPrefix()
 }
 
 tlv::AppendStatus 
-CtModuleV2::onDataSubmission(const Data& data)
+CtModule::onDataSubmission(const Data& data)
 {
   NDN_LOG_TRACE("Received Submission " << data);
   Name name = data.getName();
@@ -97,7 +95,7 @@ CtModuleV2::onDataSubmission(const Data& data)
 }
 
 void
-CtModuleV2::onQuery(const Interest& query) {
+CtModule::onQuery(const Interest& query) {
   // need to validate query format
   NDN_LOG_TRACE("Received Query " << query);
   try {
@@ -113,7 +111,7 @@ CtModuleV2::onQuery(const Interest& query) {
 }
 
 std::shared_ptr<nack::Nack>
-CtModuleV2::prepareNack(const Name dataName, ndn::time::milliseconds freshnessPeriod)
+CtModule::prepareNack(const Name dataName, ndn::time::milliseconds freshnessPeriod)
 {
   std::shared_ptr<nack::Nack> nack = std::make_shared<nack::Nack>();
   auto nackName = dataName;
@@ -125,7 +123,7 @@ CtModuleV2::prepareNack(const Name dataName, ndn::time::milliseconds freshnessPe
 }
 
 void
-CtModuleV2::onRegisterFailed(const std::string& reason)
+CtModule::onRegisterFailed(const std::string& reason)
 {
   NDN_LOG_ERROR("Failed to register prefix in local hub's daemon, REASON: " << reason);
 }

@@ -1,4 +1,4 @@
-#include "ct-module-v2.hpp"
+#include "ct-module.hpp"
 
 #include <iostream>
 #include <chrono>
@@ -23,7 +23,7 @@ main(int argc, char* argv[])
     keyChain.createIdentity(Name("/ndn/edu/ucla/v2"));
   }
 
-  CtModuleV2 ct(face, keyChain, "examples/ct-v2.config");
+  CtModule ct(face, keyChain, "examples/ct.config");
   face.processEvents();
   return 0;
 }

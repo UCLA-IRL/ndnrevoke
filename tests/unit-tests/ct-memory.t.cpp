@@ -1,4 +1,4 @@
-#include "storage/ct-memory-v2.hpp"
+#include "storage/ct-memory.hpp"
 #include "test-common.hpp"
 
 namespace ndnrevoke {
@@ -10,7 +10,7 @@ BOOST_FIXTURE_TEST_SUITE(TestCtMemoryV2, IdentityManagementFixture)
 
 BOOST_AUTO_TEST_CASE(BasicOps)
 {
-  CtMemoryV2 storage;
+  CtMemory storage;
 
   auto identity1 = addIdentity(Name("/ndn/site1"));
   auto key1 = identity1.getDefaultKey();

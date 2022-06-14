@@ -1,4 +1,4 @@
-#include "storage/ct-ledger.hpp"
+#include "storage/ct-ledger.hpp.deprecate"
 #include "record-encoder.hpp"
 #include "test-common.hpp"
 #include "ndn-cxx/security/validator-null.hpp"
