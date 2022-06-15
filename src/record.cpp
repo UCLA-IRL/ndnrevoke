@@ -19,6 +19,7 @@ Record::Record(const Data& data)
 {
   Record record;
   record.fromData(data);
+  m_name = record.getName();
   m_publicKeyHash = record.getPublicKeyHash();
   m_timestamp = record.getTimestamp();
   m_reason = record.getReason();
@@ -114,25 +115,15 @@ Record::prepareData()
   return data; 
 }
 
-Name Record::getRevocationRecordPrefix(Name certName) {
-  certName.set(KEYWORD_OFFSET + 1, Name::Component("REVOKE"));
-  return certName;
-}
-
-Name Record::getCertificateName(const Name recordName) {
-  Name certName(recordName);
-  certName.set(record::Record::KEYWORD_OFFSET, Name::Component("KEY"));
-  certName.erase(record::Record::REVOKER_OFFSET);
-  return certName;
-}
-
 bool
 Record::isValidName(const Name name)
 {
   Name certName(name);
   certName.set(record::Record::KEYWORD_OFFSET, Name::Component("KEY"));
   certName.erase(record::Record::REVOKER_OFFSET);
-  return Certificate::isValidName(certName);
+  return name.get(REVOKER_OFFSET).isGeneric() &&
+         name.get(REVOKER_OFFSET - 1).isVersion() && // Certificate::isValidName should have done this
+         Certificate::isValidName(certName);
 }
 
 std::ostream&

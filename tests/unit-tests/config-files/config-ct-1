@@ -1,9 +1,10 @@
 {
   "ct-prefix": "/ndn",
-  "nack-freshness-period": "864000",
+  "nack-freshness-period": "10",
   "record-zones":
   [
     {"record-zone-prefix": "/ndn/site1"},
     {"record-zone-prefix": "/ndn/site2"}
-  ]
+  ],
+  "trust-schema": "tests/unit-tests/config-files/trust-schema.conf"
 }

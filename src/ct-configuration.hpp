@@ -36,6 +36,7 @@ public:
   // Ct won't do look up for records that are that belong to any of the record Zone.
   // no protocol side impact, purely for filtering Ct side unnecessary record look up.
   std::vector<Name> recordZones;
+  std::string schemaFile;
 };
 
 } // namespace ndnrevoke::ct

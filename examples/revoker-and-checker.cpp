@@ -66,7 +66,7 @@ main(int argc, char* argv[])
                                     Name::Component("cs-signer"));
   // init append client for revoker and callbacks for checker
   append::HandleClient client(ownerId.getName(), face, keyChain);
-  checker::Checker checker(face);
+  checker::Checker checker(face, "trust-schema.conf");
 
 
   // scheduled record appending after prefix registeration
@@ -81,7 +81,7 @@ main(int argc, char* argv[])
           content.parse();
           for (auto elem : content.elements()) {
             uint64_t status = readNonNegativeInteger(elem);
-            NDN_LOG_INFO("Append status [SUCCESS]: " << append::statusToString(static_cast<tlv::AppendStatus>(status)));
+            NDN_LOG_INFO("Append status [SUCCESS]: " << append::statusToString(static_cast<appendtlv::AppendStatus>(status)));
           }
       },
       [&] (auto& i) {
@@ -89,7 +89,7 @@ main(int argc, char* argv[])
           content.parse();
           for (auto elem : content.elements()) {
             uint64_t status = readNonNegativeInteger(elem);
-            NDN_LOG_INFO("Append status [FAILURE]: " << append::statusToString(static_cast<tlv::AppendStatus>(status)));
+            NDN_LOG_INFO("Append status [FAILURE]: " << append::statusToString(static_cast<appendtlv::AppendStatus>(status)));
           }
       },
       [] (auto&&) {
@@ -110,10 +110,10 @@ main(int argc, char* argv[])
     },
     [] (auto& i) {
       // on revoked, should be a record
-      NDN_LOG_INFO("Record Data: " << i);
+      // NDN_LOG_INFO("Record Data: " << i);
     },
     [] (auto i) {
-      NDN_LOG_INFO("Failure Reason: " << i);
+      // NDN_LOG_INFO("Failure Reason: " << i);
     });
 
     checker.doIssuerCheck(ledgerPrefix, ownerCert, 
@@ -122,10 +122,10 @@ main(int argc, char* argv[])
     },
     [] (auto& i) {
       // on revoked, should be a record
-      NDN_LOG_INFO("Record Data: " << i);
+      // NDN_LOG_INFO("Record Data: " << i);
     },
     [] (auto i) {
-      NDN_LOG_INFO("Failure Reason: " << i);
+      // NDN_LOG_INFO("Failure Reason: " << i);
     });
   }
   );

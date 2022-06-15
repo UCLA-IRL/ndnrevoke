@@ -79,16 +79,12 @@ public:
   Record&
   setNotBefore(const time::milliseconds notBefore);
 
+  static bool isValidName(const Name name);
+
   // /<prefix>/REVOKE/<keyid>/<issuer>/<version>/<revoker>
   static const ssize_t REVOKER_OFFSET;
   static const ssize_t KEYWORD_OFFSET;
   static const ssize_t KEYID_OFFSET;
-
-  static Name getRevocationRecordPrefix(Name certName);
-  static Name getCertificateName(const Name recordName);
-
-
-  static bool isValidName(const Name name);
 
 private:
   Name m_name;

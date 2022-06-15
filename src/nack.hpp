@@ -2,6 +2,7 @@
 #define NDNREVOKE_NACK_HPP
 
 #include "revocation-common.hpp"
+#include "record.hpp"
 
 namespace ndnrevoke::nack {
 
@@ -31,6 +32,35 @@ public:
     return m_name;
   }
 
+  const time::milliseconds
+  getTimestamp() const
+  {
+    auto timestamp = m_name.get(TIMESTAMP_OFFSET).toTimestamp();
+    return time::toUnixTimestamp(timestamp);   
+  }
+
+  std::shared_ptr<Data>
+  prepareData(const Name dataName, const time::milliseconds timestamp);
+
+  static bool isValidName(const Name name);
+
+  // /<data-prefix>/nack/<timestamp>
+  static const ssize_t TIMESTAMP_OFFSET;
+  static const ssize_t NACK_OFFSET;
+
+protected:
+  Name m_name;
+};
+
+class RecordNack : public Nack
+{
+public:
+  explicit
+  RecordNack(const Block& block);
+
+  explicit
+  RecordNack(const Data& data);
+
   const Name
   getRecordName() const
   {
@@ -40,30 +70,15 @@ public:
   const Name
   getCertName() const
   {
-    return Name(m_name.getPrefix(PUBLISHER_OFFSET));
+    return Name(m_name.getPrefix(PUBLISHER_OFFSET)
+                      .set(Certificate::KEY_COMPONENT_OFFSET, Name::Component("KEY")));
   }
 
-  const time::milliseconds
-  getTimestamp() const
-  {
-    auto timestamp = m_name.get(TIMESTAMP_OFFSET).toTimestamp();
-    return time::toUnixTimestamp(timestamp);   
-  }
+  static bool isValidName(const Name name);
 
   // /<prefix>/REVOKE/<keyid>/<issuer>/<version>/<publisher>/nack/<timestamp>
-  static const ssize_t TIMESTAMP_OFFSET;
-  static const ssize_t NACK_OFFSET;
   static const ssize_t PUBLISHER_OFFSET;
   static const ssize_t REVOKE_OFFSET;
-
-  static Name
-  getCertificateName(const Name nackName);
-
-  std::shared_ptr<Data>
-  prepareData(const Name recordName, const time::milliseconds timestamp);
-
-private:
-  Name m_name;
 };
 
 } // namespace ndnrevoke::nack

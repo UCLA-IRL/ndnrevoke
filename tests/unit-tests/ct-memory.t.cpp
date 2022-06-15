@@ -6,7 +6,7 @@ namespace tests {
 
 using namespace ct;
 
-BOOST_FIXTURE_TEST_SUITE(TestCtMemoryV2, IdentityManagementFixture)
+BOOST_FIXTURE_TEST_SUITE(TestCtMemory, IdentityManagementFixture)
 
 BOOST_AUTO_TEST_CASE(BasicOps)
 {

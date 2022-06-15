@@ -8,6 +8,7 @@
 
 #include <ndn-cxx/face.hpp>
 #include <ndn-cxx/security/key-chain.hpp>
+#include <ndn-cxx/security/validator-config.hpp>
 
 namespace ndnrevoke::ct {
 using appendtlv::AppendStatus;
@@ -53,6 +54,7 @@ NDNREVOKE_PUBLIC_WITH_TESTS_ELSE_PRIVATE:
   ndn::Face& m_face;
   CtConfig m_config;
   ndn::KeyChain& m_keyChain;
+  ndn::ValidatorConfig m_validator{m_face};
   std::unique_ptr<CtStorage> m_storage;
   std::list<ndn::RegisteredPrefixHandle> m_registeredPrefixHandles;
   std::list<ndn::InterestFilterHandle> m_interestFilterHandles;

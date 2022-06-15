@@ -26,6 +26,8 @@ CtModule::CtModule(ndn::Face& face, ndn::KeyChain& keyChain, const std::string& 
   // register prefixes
   m_handle->listenOnTopic(Name(m_config.ctPrefix).append("LEDGER").append("append"),
                           std::bind(&CtModule::onDataSubmission, this, _1));
+
+  m_validator.load(m_config.schemaFile);
 }
 
 CtModule::~CtModule()
@@ -99,15 +101,17 @@ CtModule::onQuery(const Interest& query) {
   NDN_LOG_TRACE("Received Query " << query);
   try {
     Data data = m_storage->getData(query.getName());
-    NDN_LOG_DEBUG("CT replies with: " << data.getName());
+    NDN_LOG_TRACE("CT replies with: " << data.getName());
     m_face.put(data);
   }
   catch (std::exception& e) {
     NDN_LOG_DEBUG("CT storage cannot get the Data for reason: " << e.what());
     // reply with app layer nack
     nack::Nack nack;
-    auto data = nack.prepareData(query.getName(), m_config.nackFreshnessPeriod);
+    auto data = nack.prepareData(query.getName(), time::toUnixTimestamp(time::system_clock::now()));
+    data->setFreshnessPeriod(m_config.nackFreshnessPeriod);
     m_keyChain.sign(*data, signingByIdentity(m_config.ctPrefix));
+    NDN_LOG_TRACE("CT replies with: " << data->getName());
     m_face.put(*data);
   }
 }

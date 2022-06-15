@@ -11,6 +11,7 @@ const std::string CONFIG_CT_PREFIX = "ct-prefix";
 const std::string CONFIG_NACK_FRESHNESS_PERIOD = "nack-freshness-period";
 const std::string CONFIG_RECORD_ZONES = "record-zones";
 const std::string CONFIG_RECORD_ZONE_PREFIX = "record-zone-prefix";
+const std::string CONFIG_TRUST_SCHEMA = "trust-schema";
 
 void
 CtConfig::load(const std::string& fileName)
@@ -27,7 +28,7 @@ CtConfig::load(const std::string& fileName)
   }
 
 
- // Ct prefix
+  // Ct prefix
   ctPrefix = Name(configJson.get(CONFIG_CT_PREFIX, ""));
   if (ctPrefix.empty()) {
     NDN_THROW(std::runtime_error("Cannot parse ct-prefix from the config file"));
@@ -50,7 +51,10 @@ CtConfig::load(const std::string& fileName)
     NDN_THROW(std::runtime_error("No recordZone configured."));
   }
 
-  // in fact, we also need configure trust policies, but will do later
+  schemaFile = configJson.get(CONFIG_TRUST_SCHEMA, "");
+  if (schemaFile.empty()) {
+    NDN_THROW(std::runtime_error("Cannot parse trust schema from the config file"));
+  }
 }
 
 } // namespace ndnrevoke::ct
