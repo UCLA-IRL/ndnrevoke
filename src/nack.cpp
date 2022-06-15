@@ -10,21 +10,35 @@ const ssize_t Nack::REVOKE_OFFSET = -7;
 
 Nack::Nack()
 {
-  setContentType(ndn::tlv::ContentType_Nack);
-}
-
-Nack::Nack(Data&& data)
-  : Data(std::move(data))
-{
-}
-Nack::Nack(const Data& data)
-  : Nack(Data(data))
-{
 }
 
 Nack::Nack(const Block& block)
   : Nack(Data(block))
 {
+}
+
+Nack::Nack(const Data& data)
+{
+  Nack nack;
+  nack.fromData(data);
+  m_name = nack.getName();
+}
+
+
+void
+Nack::fromData(const Data& data)
+{
+  m_name = data.getName();
+}
+
+std::shared_ptr<Data>
+Nack::prepareData(const Name recordName, ndn::time::milliseconds timestamp)
+{
+  Name name(recordName);
+  name.appendTimestamp(ndn::time::fromUnixTimestamp(timestamp));
+  auto data = std::make_shared<Data>(name);
+  data->setContentType(ndn::tlv::ContentType_Nack);
+  return data;
 }
 
 Name

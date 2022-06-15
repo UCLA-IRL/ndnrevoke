@@ -1,7 +1,6 @@
 #include "append/handle-ct.hpp"
 #include "append/handle-client.hpp"
 #include "append/append-encoder.hpp"
-#include "state.hpp"
 #include "test-common.hpp"
 
 namespace ndnrevoke {
@@ -111,7 +110,7 @@ BOOST_AUTO_TEST_CASE(AppendHandleClient)
 
   Data data("/ndn/site1/abc/def");
   static const std::string str("Hello, world!");
-  data.setContent(reinterpret_cast<const uint8_t*>(str.data()), str.size());
+  data.setContent(ndn::make_span<const uint8_t>(reinterpret_cast<const uint8_t*>(str.data()), str.size()));
   m_keyChain.sign(data, ndn::signingByIdentity(identity2));
   BOOST_CHECK_EQUAL(client.m_nonceMap.size(), 0);
   client.appendData(Name("/ndn/append"), {data});
@@ -168,7 +167,7 @@ BOOST_AUTO_TEST_CASE(AppendHandleClientCallback)
 
   Data data("/ndn/site1/abc/def");
   static const std::string str("Hello, world!");
-  data.setContent(reinterpret_cast<const uint8_t*>(str.data()), str.size());
+  data.setContent(ndn::make_span<const uint8_t>(reinterpret_cast<const uint8_t*>(str.data()), str.size()));
   m_keyChain.sign(data, ndn::signingByIdentity(identity2));
   
   BOOST_CHECK_EQUAL(client.m_nonceMap.size(), 0);

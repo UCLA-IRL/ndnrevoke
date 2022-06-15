@@ -4,36 +4,51 @@
 #include <optional>
 #include "revocation-common.hpp"
 #include "record.hpp"
-#include "record-encoder.hpp"
 #include "nack.hpp"
 #include <ndn-cxx/security/key-chain.hpp>
 
-namespace ndnrevoke {
-namespace revoker {
+namespace ndnrevoke::revoker {
 
 class Revoker : boost::noncopyable
 {
 public:
   explicit
   Revoker(ndn::KeyChain& keyChain);
-  
-  std::shared_ptr<record::Record>
-  revokeAsIssuer(const Certificate& certData, tlv::ReasonCode reason, uint64_t notBefore,
+
+  std::shared_ptr<Data>
+  revokeAsIssuer(const Certificate& certData, const tlv::ReasonCode reason);
+
+  std::shared_ptr<Data>
+  revokeAsIssuer(const Certificate& certData, const tlv::ReasonCode reason,
+                 const ndn::time::milliseconds notBefore,
                  const ndn::time::milliseconds freshnessPeriod = 100_h);
 
-  std::shared_ptr<record::Record>
-  revokeAsOwner(const Certificate& certData, tlv::ReasonCode reason, uint64_t notBefore,
+  std::shared_ptr<Data>
+  revokeAsOwner(const Certificate& certData, const tlv::ReasonCode reason);
+
+  std::shared_ptr<Data>
+  revokeAsOwner(const Certificate& certData, const tlv::ReasonCode reason,
+                const ndn::time::milliseconds notBefore,
                 const ndn::time::milliseconds freshnessPeriod = 100_h);
 
-  std::shared_ptr<record::Record>
-  revokeAs(const Certificate& certData, tlv::ReasonCode reason, uint64_t notBefore,
-           Name::Component id,
+  std::shared_ptr<Data>
+  revokeAs(const Certificate& certData, const tlv::ReasonCode reason,
+           const Name::Component revokerId);
+
+  std::shared_ptr<Data>
+  revokeAs(const Certificate& certData, const tlv::ReasonCode reason,
+           const ndn::time::milliseconds notBefore,
+           const Name::Component revokerId,
            const ndn::time::milliseconds freshnessPeriod);
+
+  static const ndn::time::milliseconds recordFreshness;
 private:
+  std::shared_ptr<Data>
+  sign(std::shared_ptr<Data> data, const Certificate& cert, const Name::Component revokerId);
+
   ndn::KeyChain& m_keyChain;
 };
 
-} // namespace revoker
-} // namespace ndnrevoke
+} // namespace ndnrevoke::revoker
 
 #endif // NDNREVOKE_REVOKER_HPP

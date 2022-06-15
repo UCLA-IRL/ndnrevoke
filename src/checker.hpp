@@ -2,7 +2,6 @@
 #define NDNREVOKE_CHECKER_HPP
 
 #include "record.hpp"
-#include "record-encoder.hpp"
 #include "nack.hpp"
 #include <ndn-cxx/security/key-chain.hpp>
 #include <ndn-cxx/face.hpp>

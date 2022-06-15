@@ -40,9 +40,6 @@ NDNREVOKE_PUBLIC_WITH_TESTS_ELSE_PRIVATE:
 
   tlv::AppendStatus onDataSubmission(const Data& data);
 
-  std::shared_ptr<nack::Nack>
-  prepareNack(const Name dataName, ndn::time::milliseconds freshnessPeriod);
-
   void
   registerPrefix();
 

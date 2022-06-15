@@ -72,10 +72,8 @@ main(int argc, char* argv[])
   // scheduled record appending after prefix registeration
   scheduler.schedule(CHECKOUT_INTERVAL, [&] {
     revoker::Revoker revoker(keyChain);
-    auto ownerRecord = revoker.revokeAsOwner(ownerCert, tlv::ReasonCode::SUPERSEDED, 
-                                        time::toUnixTimestamp(time::system_clock::now()).count());
-    auto issuerRecord = revoker.revokeAsIssuer(ownerCert, tlv::ReasonCode::SUPERSEDED, 
-                                        time::toUnixTimestamp(time::system_clock::now()).count());
+    auto ownerRecord = revoker.revokeAsOwner(ownerCert, tlv::ReasonCode::SUPERSEDED);
+    auto issuerRecord = revoker.revokeAsIssuer(ownerCert, tlv::ReasonCode::SUPERSEDED);
     Name appendPrefix = Name(ledgerPrefix).append("append");
     client.appendData(appendPrefix, {*ownerRecord, *issuerRecord},
       [&] (auto& i) {
@@ -109,7 +107,6 @@ main(int argc, char* argv[])
    checker.doOwnerCheck(ledgerPrefix, ownerCert, 
     [] (auto& i) {
       // on valid, should be a nack data
-      NDN_LOG_INFO("Nack Data: " << i);
     },
     [] (auto& i) {
       // on revoked, should be a record
@@ -122,7 +119,6 @@ main(int argc, char* argv[])
     checker.doIssuerCheck(ledgerPrefix, ownerCert, 
     [] (auto& i) {
       // on valid, should be a nack data
-      NDN_LOG_INFO("Nack Data: " << i);
     },
     [] (auto& i) {
       // on revoked, should be a record

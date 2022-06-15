@@ -1,6 +1,6 @@
 #include "ct-module.hpp"
-#include "record-encoder.hpp"
-#include "nack-encoder.hpp"
+#include "record.hpp"
+#include "nack.hpp"
 
 #include <ndn-cxx/security/signing-helpers.hpp>
 #include <ndn-cxx/security/verification-helpers.hpp>
@@ -80,7 +80,7 @@ CtModule::onDataSubmission(const Data& data)
       return tlv::AppendStatus::FAILURE_STORAGE;
     }
   }
-  else if (Certificate::isValidName(record::Record::getCertificateName(name))) {
+  else if (record::Record::isValidName(name)) {
     // TODO: do sth
     try {
       m_storage->addData(data);
@@ -106,20 +106,11 @@ CtModule::onQuery(const Interest& query) {
   catch (std::exception& e) {
     NDN_LOG_DEBUG("CT storage cannot get the Data for reason: " << e.what());
     // reply with app layer nack
-    m_face.put(*prepareNack(query.getName(), m_config.nackFreshnessPeriod));
+    nack::Nack nack;
+    auto data = nack.prepareData(query.getName(), m_config.nackFreshnessPeriod);
+    m_keyChain.sign(*data, signingByIdentity(m_config.ctPrefix));
+    m_face.put(*data);
   }
-}
-
-std::shared_ptr<nack::Nack>
-CtModule::prepareNack(const Name dataName, ndn::time::milliseconds freshnessPeriod)
-{
-  std::shared_ptr<nack::Nack> nack = std::make_shared<nack::Nack>();
-  auto nackName = dataName;
-  nackName.append("nack").appendTimestamp();  
-  nack->setName(nackName);
-  nack->setFreshnessPeriod(freshnessPeriod);
-  m_keyChain.sign(*nack, signingByIdentity(m_config.ctPrefix));
-  return nack;
 }
 
 void

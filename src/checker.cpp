@@ -70,7 +70,7 @@ Checker::onData(const Interest&, const Data& data)
   certName = record::Record::getCertificateName(dataName);
   NDN_LOG_TRACE(certName);
   if (Certificate::isValidName(certName) &&
-      dataName.at(record::Record::REVOKE_OFFSET) == Name::Component("REVOKE")) {
+      dataName.at(record::Record::KEYWORD_OFFSET) == Name::Component("REVOKE")) {
     // TODO: validation
     auto iter = m_states.find(data.getName());
     if (iter == m_states.end()) {
