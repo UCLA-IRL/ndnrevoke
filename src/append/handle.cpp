@@ -2,8 +2,7 @@
 #include "append/append-common.hpp"
 #include "append/handle.hpp"
 
-namespace ndnrevoke {
-namespace append {
+namespace ndnrevoke::append {
 
 Handle::Handle(const Name& localPrefix, ndn::Face& face, ndn::KeyChain& keyChain)
   : m_localPrefix(localPrefix)
@@ -22,5 +21,4 @@ Handle::~Handle()
   }
 }
 
-} // namespace append
-} // namespace ndnrevoke
+} // namespace ndnrevoke::append

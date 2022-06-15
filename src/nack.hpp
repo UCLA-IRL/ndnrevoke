@@ -43,11 +43,11 @@ public:
     return Name(m_name.getPrefix(PUBLISHER_OFFSET));
   }
 
-  const ndn::time::milliseconds
+  const time::milliseconds
   getTimestamp() const
   {
     auto timestamp = m_name.get(TIMESTAMP_OFFSET).toTimestamp();
-    return ndn::time::toUnixTimestamp(timestamp);   
+    return time::toUnixTimestamp(timestamp);   
   }
 
   // /<prefix>/REVOKE/<keyid>/<issuer>/<version>/<publisher>/nack/<timestamp>
@@ -60,7 +60,7 @@ public:
   getCertificateName(const Name nackName);
 
   std::shared_ptr<Data>
-  prepareData(const Name recordName, const ndn::time::milliseconds timestamp);
+  prepareData(const Name recordName, const time::milliseconds timestamp);
 
 private:
   Name m_name;

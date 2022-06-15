@@ -4,7 +4,7 @@
 #include "revocation-common.hpp"
 #include <ndn-cxx/util/random.hpp>
 
-namespace ndnrevoke {
+namespace ndnrevoke::appendtlv {
 
 // CT is an append-only log, therefore we need a procotol that let producer Apps append
 
@@ -20,8 +20,6 @@ namespace ndnrevoke {
 
 // ForwardingHint = FORWARDING-HINT-TYPE TLV-LENGTH Name
 // StatusCode = STATUS-CODE-TYPE TLV-LENGTH NonNegativeInteger
-
-namespace tlv {
 
 // notification
 enum : uint32_t {
@@ -51,7 +49,6 @@ enum class AppendStatus : uint64_t {
   NOTINITIALIZED = 99,
 };
 
-} // namespace tlv
-} // namespace ndnrevoke
+} // namespace ndnrevoke::appendtlv
 
 #endif // NDNREVOKE_APPEND_APPEND_COMMON_HPP

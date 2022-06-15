@@ -6,8 +6,7 @@
 #include <ndn-cxx/security/key-chain.hpp>
 #include <ndn-cxx/face.hpp>
 
-namespace ndnrevoke {
-namespace checker {
+namespace ndnrevoke::checker {
 
 using onValidCallback = std::function<void(const nack::Nack&)>;
 using onRevokedCallback = std::function<void(const record::Record&)>;
@@ -59,7 +58,6 @@ private:
   std::unordered_map<Name, CheckerCbs> m_states;
 };
 
-} // namespace checker
-} // namespace ndnrevoke
+} // namespace ndnrevoke::checker
 
 #endif // NDNREVOKE_CHECKER_HPP

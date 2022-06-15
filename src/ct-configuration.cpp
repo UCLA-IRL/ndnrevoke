@@ -5,8 +5,7 @@
 #include <boost/filesystem.hpp>
 #include <boost/property_tree/json_parser.hpp>
 
-namespace ndnrevoke {
-namespace ct {
+namespace ndnrevoke::ct {
 
 const std::string CONFIG_CT_PREFIX = "ct-prefix";
 const std::string CONFIG_NACK_FRESHNESS_PERIOD = "nack-freshness-period";
@@ -54,5 +53,4 @@ CtConfig::load(const std::string& fileName)
   // in fact, we also need configure trust policies, but will do later
 }
 
-} // namespace ct
-} // namespace ndnrevoke
+} // namespace ndnrevoke::ct

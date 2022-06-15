@@ -5,8 +5,8 @@
 #include "append/append-encoder.hpp"
 #include "append/handle.hpp"
 
-namespace ndnrevoke {
-namespace append {
+namespace ndnrevoke::append {
+namespace tlv = appendtlv;
 
 using UpdateCallback = std::function<tlv::AppendStatus(const Data&)>;
 
@@ -44,7 +44,6 @@ NDNREVOKE_PUBLIC_WITH_TESTS_ELSE_PRIVATE:
   UpdateCallback m_updateCallback;
 };
 
-} // namespace append
-} // namespace ndnrevoke
+} // namespace ndnrevoke::append
 
-#endif // NDNREVOKE_APPEND_HANDLE_CLIENT_HPP
+#endif // NDNREVOKE_APPEND_HANDLE_CT_HPP

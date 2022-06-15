@@ -9,8 +9,8 @@
 #include <ndn-cxx/face.hpp>
 #include <ndn-cxx/security/key-chain.hpp>
 
-namespace ndnrevoke {
-namespace ct {
+namespace ndnrevoke::ct {
+using appendtlv::AppendStatus;
 
 class CtModule : boost::noncopyable
 {
@@ -38,7 +38,7 @@ public:
 
 NDNREVOKE_PUBLIC_WITH_TESTS_ELSE_PRIVATE:
 
-  tlv::AppendStatus onDataSubmission(const Data& data);
+  AppendStatus onDataSubmission(const Data& data);
 
   void
   registerPrefix();
@@ -60,7 +60,6 @@ NDNREVOKE_PUBLIC_WITH_TESTS_ELSE_PRIVATE:
   std::shared_ptr<append::HandleCt> m_handle;
 };
 
-} // namespace ct
-} // namespace ndnrevoke
+} // namespace ndnrevoke::ct
 
-#endif // NDNREVOKE_CT_MODULE_V2_HPP
+#endif // NDNREVOKE_CT_MODULE_HPP

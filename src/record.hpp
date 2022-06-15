@@ -34,7 +34,7 @@ public:
     return m_name;
   }
 
-  const ndn::span<const uint8_t>
+  const span<const uint8_t>
   getPublicKeyHash() const
   {
     return m_publicKeyHash;
@@ -68,16 +68,16 @@ public:
   setName(const Name& name);
 
   Record&
-  setPublicKeyHash(const ndn::span<const uint8_t> hash);
+  setPublicKeyHash(const span<const uint8_t> hash);
 
   Record&
   setReason(const tlv::ReasonCode reason);
 
   Record&
-  setTimestamp(const ndn::time::milliseconds timestamp);
+  setTimestamp(const time::milliseconds timestamp);
 
   Record&
-  setNotBefore(ndn::time::milliseconds notBefore);
+  setNotBefore(const time::milliseconds notBefore);
 
   // /<prefix>/REVOKE/<keyid>/<issuer>/<version>/<revoker>
   static const ssize_t REVOKER_OFFSET;
@@ -92,10 +92,10 @@ public:
 
 private:
   Name m_name;
-  ndn::span<const uint8_t> m_publicKeyHash;
+  span<const uint8_t> m_publicKeyHash;
   tlv::ReasonCode m_reason;
   ndn::time::milliseconds m_timestamp;
-  optional<ndn::time::milliseconds> m_notBefore;
+  optional<time::milliseconds> m_notBefore;
 };
 
 std::ostream&

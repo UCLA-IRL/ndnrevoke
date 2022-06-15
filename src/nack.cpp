@@ -32,7 +32,7 @@ Nack::fromData(const Data& data)
 }
 
 std::shared_ptr<Data>
-Nack::prepareData(const Name recordName, ndn::time::milliseconds timestamp)
+Nack::prepareData(const Name recordName, time::milliseconds timestamp)
 {
   Name name(recordName);
   name.appendTimestamp(ndn::time::fromUnixTimestamp(timestamp));

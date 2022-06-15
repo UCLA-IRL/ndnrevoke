@@ -17,8 +17,8 @@ Revoker::revokeAsIssuer(const Certificate& certData, const tlv::ReasonCode reaso
 
 std::shared_ptr<Data>
 Revoker::revokeAsIssuer(const Certificate& certData, const tlv::ReasonCode reason,
-                        const ndn::time::milliseconds notBefore,
-                        const ndn::time::milliseconds freshnessPeriod)
+                        const time::milliseconds notBefore,
+                        const time::milliseconds freshnessPeriod)
 {
   return revokeAs(certData, reason, notBefore, certData.getIssuerId(), freshnessPeriod);
 }
@@ -31,8 +31,8 @@ Revoker::revokeAsOwner(const Certificate& certData, const tlv::ReasonCode reason
 
 std::shared_ptr<Data>
 Revoker::revokeAsOwner(const Certificate& certData, const tlv::ReasonCode reason,
-                       const ndn::time::milliseconds notBefore,
-                       const ndn::time::milliseconds freshnessPeriod)
+                       const time::milliseconds notBefore,
+                       const time::milliseconds freshnessPeriod)
 {
   return revokeAs(certData, reason, notBefore, Name::Component("self"), freshnessPeriod);
 }
@@ -48,7 +48,7 @@ Revoker::revokeAs(const Certificate& certData, tlv::ReasonCode reason,
 
   // get the public key hash
   auto buf = Sha256::computeDigest(certData.getPublicKey());
-  auto hash = ndn::make_span(reinterpret_cast<const uint8_t*>(buf->data()), buf->size());
+  auto hash = make_span(reinterpret_cast<const uint8_t*>(buf->data()), buf->size());
   
   record::Record record;
   record.setName(recordName);
@@ -62,9 +62,9 @@ Revoker::revokeAs(const Certificate& certData, tlv::ReasonCode reason,
 
 std::shared_ptr<Data>
 Revoker::revokeAs(const Certificate& certData, tlv::ReasonCode reason,
-                  const ndn::time::milliseconds notBefore,
+                  const time::milliseconds notBefore,
                   const Name::Component revokerId,
-                  const ndn::time::milliseconds freshnessPeriod)
+                  const time::milliseconds freshnessPeriod)
 {
   auto recordName = certData.getName();
   recordName.set(certData.getIdentity().size(), Name::Component("REVOKE"));
@@ -72,7 +72,7 @@ Revoker::revokeAs(const Certificate& certData, tlv::ReasonCode reason,
 
   // get the public key hash
   auto buf = Sha256::computeDigest(certData.getPublicKey());
-  auto hash = ndn::make_span(reinterpret_cast<const uint8_t*>(buf->data()), buf->size());
+  auto hash = make_span(reinterpret_cast<const uint8_t*>(buf->data()), buf->size());
   
   record::Record record;
   record.setName(recordName);

@@ -35,7 +35,7 @@ Record::setName(const Name& name)
 }
 
 Record&
-Record::setPublicKeyHash(const ndn::span<const uint8_t> hash)
+Record::setPublicKeyHash(const span<const uint8_t> hash)
 {
   m_publicKeyHash = hash;
   return *this;
@@ -49,14 +49,14 @@ Record::setReason(const tlv::ReasonCode reason)
 }
 
 Record&
-Record::setTimestamp(const ndn::time::milliseconds timestamp)
+Record::setTimestamp(const time::milliseconds timestamp)
 {
   m_timestamp = timestamp;
   return *this;
 }
 
 Record&
-Record::setNotBefore(ndn::time::milliseconds notBefore)
+Record::setNotBefore(const time::milliseconds notBefore)
 {
   m_notBefore = notBefore;
   return *this;
@@ -75,7 +75,7 @@ Record::fromData(const Data& data)
   for (const auto &item : content.elements()) {
     switch (item.type()) {
       case tlv::PublicKeyHash:
-        m_publicKeyHash = ndn::make_span<const uint8_t>(item.value(), item.value_size());
+        m_publicKeyHash = make_span<const uint8_t>(item.value(), item.value_size());
         break;
       case tlv::RevocationTimestamp:
         m_timestamp = time::milliseconds(readNonNegativeInteger(item));
@@ -140,7 +140,7 @@ operator<<(std::ostream& os, const Record& record)
 {
   os << "Name: " << record.getName() << "\n"
      << "   Public Key Hash: [" <<  ndn::toHex(record.getPublicKeyHash()) << "]\n"
-     << "   Revocation Timestamp: [" << ndn::time::toString(ndn::time::fromUnixTimestamp(record.getTimestamp())) << "]\n"
+     << "   Revocation Timestamp: [" << time::toString(time::fromUnixTimestamp(record.getTimestamp())) << "]\n"
      << "   Revocation Reason: [" << static_cast<uint64_t>(record.getReason()) << "]\n";
 
   if (record.hasNotBefore()) {

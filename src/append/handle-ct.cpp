@@ -3,8 +3,7 @@
 
 #include <ndn-cxx/security/signing-helpers.hpp>
 
-namespace ndnrevoke {
-namespace append {
+namespace ndnrevoke::append {
 
 NDN_LOG_INIT(ndnrevoke.append);
 
@@ -153,7 +152,7 @@ HandleCt::onSubmissionData(const Interest& interest, const Data& data)
     item->second.retryCount = 0;
     content.parse();
     ssize_t count = 0;
-    ndnrevoke::tlv::AppendStatus statusCode;
+    tlv::AppendStatus statusCode;
     for (const auto &item : content.elements()) {
       switch (item.type()) {
         case ndn::tlv::Data:
@@ -184,5 +183,4 @@ HandleCt::onSubmissionData(const Interest& interest, const Data& data)
   }
 }
 
-} // namespace append
-} // namespace ndnrevoke
+} // namespace ndnrevoke::append

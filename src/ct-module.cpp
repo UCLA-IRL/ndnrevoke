@@ -8,8 +8,7 @@
 #include <ndn-cxx/util/random.hpp>
 #include <ndn-cxx/util/string-helper.hpp>
 
-namespace ndnrevoke {
-namespace ct {
+namespace ndnrevoke::ct {
 
 NDN_LOG_INIT(ndnrevoke.ct);
 
@@ -62,7 +61,7 @@ CtModule::registerPrefix()
   m_registeredPrefixHandles.push_back(prefixId);
 }
 
-tlv::AppendStatus 
+AppendStatus 
 CtModule::onDataSubmission(const Data& data)
 {
   NDN_LOG_TRACE("Received Submission " << data);
@@ -73,25 +72,25 @@ CtModule::onDataSubmission(const Data& data)
     // TODO: do sth
     try {
       m_storage->addData(data);
-      return tlv::AppendStatus::SUCCESS;
+      return AppendStatus::SUCCESS;
     }
     catch (std::exception& e) {
       NDN_LOG_TRACE("Submission failed because of: " << e.what());
-      return tlv::AppendStatus::FAILURE_STORAGE;
+      return AppendStatus::FAILURE_STORAGE;
     }
   }
   else if (record::Record::isValidName(name)) {
     // TODO: do sth
     try {
       m_storage->addData(data);
-      return tlv::AppendStatus::SUCCESS;
+      return AppendStatus::SUCCESS;
     }
     catch (std::exception& e) {
       NDN_LOG_TRACE("Submission failed because of: " << e.what());
-      return tlv::AppendStatus::FAILURE_STORAGE;
+      return AppendStatus::FAILURE_STORAGE;
     }
   }
-  return tlv::AppendStatus::FAILURE_VALIDATION;
+  return AppendStatus::FAILURE_VALIDATION;
 }
 
 void
@@ -119,5 +118,4 @@ CtModule::onRegisterFailed(const std::string& reason)
   NDN_LOG_ERROR("Failed to register prefix in local hub's daemon, REASON: " << reason);
 }
 
-} // namespace ct
-} // namespace ndnrevoke
+} // namespace ndnrevoke::ct

@@ -6,11 +6,11 @@ Block
 appendtlv::encodeAppendParameters(const Name& prefix, const uint64_t nonce, const Name& forwardingHint)
 {
   Block params(ndn::tlv::ApplicationParameters);
-  params.push_back(makeNestedBlock(tlv::AppenderPrefix, prefix));
+  params.push_back(makeNestedBlock(appendtlv::AppenderPrefix, prefix));
   if (!forwardingHint.empty()) {
     params.push_back(makeNestedBlock(ndn::tlv::ForwardingHint, forwardingHint));
   }
-  params.push_back(ndn::makeNonNegativeIntegerBlock(tlv::AppenderNonce, nonce));
+  params.push_back(ndn::makeNonNegativeIntegerBlock(appendtlv::AppenderNonce, nonce));
   params.encode();
   return params;
 }
@@ -21,13 +21,13 @@ appendtlv::decodeAppendParameters(const Block& params, AppenderInfo& info)
   params.parse();
   for (const auto &item : params.elements()) {
     switch (item.type()) {
-      case tlv::AppenderPrefix:
+      case appendtlv::AppenderPrefix:
         info.remotePrefix = Name(item.blockFromValue());
         break;
       case ndn::tlv::ForwardingHint:
         info.forwardingHint = Name(item.blockFromValue());
         break;
-      case tlv::AppenderNonce:
+      case appendtlv::AppenderNonce:
         info.nonce = readNonNegativeInteger(item);
         break;
       default:

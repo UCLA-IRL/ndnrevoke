@@ -1,8 +1,7 @@
 #include "checker.hpp"
 #include "record.hpp"
 #include <ndn-cxx/security/signing-helpers.hpp>
-namespace ndnrevoke {
-namespace checker {
+namespace ndnrevoke::checker {
 
 NDN_LOG_INIT(ndnrevoke.checker);
 
@@ -134,5 +133,4 @@ Checker::onTimeout(const Interest& interest)
   }
 }
 
-} // namespace checker
 } // namespace ndnrevoke

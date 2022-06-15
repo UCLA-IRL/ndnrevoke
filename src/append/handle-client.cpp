@@ -4,8 +4,8 @@
 
 #include <ndn-cxx/security/signing-helpers.hpp>
 
-namespace ndnrevoke {
-namespace append { 
+namespace ndnrevoke::append {
+namespace tlv = appendtlv;
 
 NDN_LOG_INIT(ndnrevoke.append);
 
@@ -197,5 +197,4 @@ HandleClient::onSubmissionFetchingInterest(const Interest& interest)
   }
 }
 
-} // namespace append
-} // namespace ndnrevoke
+} // namespace ndnrevoke::append

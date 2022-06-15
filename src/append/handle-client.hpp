@@ -7,8 +7,7 @@
 #include <ndn-cxx/security/key-chain.hpp>
 #include <ndn-cxx/face.hpp>
 
-namespace ndnrevoke {
-namespace append {
+namespace ndnrevoke::append {
 
 using onSuccessCallback = std::function<void(const Data&)>; // notification ack
 using onFailureCallback = std::function<void(const Data&)>; // notification ack
@@ -65,7 +64,6 @@ NDNREVOKE_PUBLIC_WITH_TESTS_ELSE_PRIVATE:
   std::unordered_map<uint64_t, AppendCallBack> m_callback;
 };
 
-} // namespace append
-} // namespace ndnrevoke
+} // namespace ndnrevoke:append
 
 #endif // NDNREVOKE_APPEND_HANDLE_CLIENT_HPP

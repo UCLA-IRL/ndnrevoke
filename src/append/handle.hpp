@@ -6,8 +6,7 @@
 #include <ndn-cxx/security/key-chain.hpp>
 #include <ndn-cxx/face.hpp>
 
-namespace ndnrevoke {
-namespace append {
+namespace ndnrevoke::append {
 
 class Handle : boost::noncopyable
 {
@@ -26,7 +25,6 @@ NDNREVOKE_PUBLIC_WITH_TESTS_ELSE_PROTECTED:
   std::list<ndn::InterestFilterHandle> m_interestFilterHandles;
 };
 
-} // namespace append
-} // namespace ndnrevoke
+} // namespace ndnrevoke::append
 
 #endif // NDNREVOKE_APPEND_HANDLE_HPP

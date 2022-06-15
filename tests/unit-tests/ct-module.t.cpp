@@ -40,7 +40,7 @@ BOOST_AUTO_TEST_CASE(HandleQueryAndRecordV2)
   revoker::Revoker revoker(m_keyChain);
   checker::Checker checker(face);
   auto record = revoker.revokeAsOwner(cert2, tlv::ReasonCode::KEY_COMPROMISE, 
-                                      ndn::time::toUnixTimestamp(time::system_clock::now()), 1_s);
+                                      time::toUnixTimestamp(time::system_clock::now()), 1_s);
   ct.m_storage->addData(*record);
   checker.doOwnerCheck(Name("/ndn/LEDGER"), cert2, nullptr, 
     [cert2] (auto& i) {

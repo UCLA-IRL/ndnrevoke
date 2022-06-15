@@ -3,8 +3,7 @@
 
 #include "revocation-common.hpp"
 
-namespace ndnrevoke {
-namespace ct {
+namespace ndnrevoke::ct {
 
 /**
  * @brief CT's configuration on NDNREVOKE.
@@ -39,7 +38,6 @@ public:
   std::vector<Name> recordZones;
 };
 
-} // namespace ct
-} // namespace ndnrevoke
+} // namespace ndnrevoke::ct
 
 #endif // NDNREVOKE_CT_CONFIGURATION_HPP

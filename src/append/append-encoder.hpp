@@ -4,8 +4,7 @@
 #include "append/append-common.hpp"
 #include <ndn-cxx/security/key-chain.hpp>
 
-namespace ndnrevoke {
-namespace appendtlv {
+namespace ndnrevoke::appendtlv {
 
 struct AppenderInfo {
   Name remotePrefix;
@@ -22,7 +21,6 @@ encodeAppendParameters(const Name& prefix, const uint64_t nonce, const Name& for
 void
 decodeAppendParameters(const Block& params, AppenderInfo& info);
 
-} // namespace appendtlv
-} // namespace ndnrevoke
+} // namespace ndnrevoke::appendtlv
 
 #endif // NDNREVOKE_APPEND_APPEND_ENCODER_HPP

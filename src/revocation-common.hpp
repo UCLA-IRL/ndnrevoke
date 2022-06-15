@@ -47,15 +47,16 @@ using ndn::Name;
 using ndn::SignatureInfo;
 using ndn::security::Certificate;
 using ndn::util::Sha256;
-
+using ndn::span;
 using ndn::optional;
 using ndn::nullopt;
+using JsonSection = boost::property_tree::ptree;
+
+using ndn::make_span;
 
 namespace time = ndn::time;
 using namespace ndn::time_literals;
 using namespace std::string_literals;
-
-using JsonSection = boost::property_tree::ptree;
 
 namespace tlv {
 
