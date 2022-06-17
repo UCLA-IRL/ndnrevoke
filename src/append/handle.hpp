@@ -2,25 +2,25 @@
 #define NDNREVOKE_APPEND_HANDLE_HPP
 
 #include "append/append-common.hpp"
-
-#include <ndn-cxx/security/key-chain.hpp>
-#include <ndn-cxx/face.hpp>
-
 namespace ndnrevoke::append {
 
 class Handle : boost::noncopyable
 {
 public:
   explicit
-  Handle(const ndn::Name& prefix, ndn::Face& face, ndn::KeyChain& keyChain);
+  Handle()
+  {
+  }
 
   ~Handle();
 
-NDNREVOKE_PUBLIC_WITH_TESTS_ELSE_PROTECTED:
-  ndn::Name m_localPrefix;
-  ndn::Face& m_face;
-  ndn::KeyChain& m_keyChain;
+  Handle&
+  handlePrefix(const ndn::RegisteredPrefixHandle& prefix);
+  
+  Handle&
+  handleFilter(const ndn::InterestFilterHandle& filter);
 
+NDNREVOKE_PUBLIC_WITH_TESTS_ELSE_PRIVATE:
   std::list<ndn::RegisteredPrefixHandle> m_registeredPrefixHandles;
   std::list<ndn::InterestFilterHandle> m_interestFilterHandles;
 };

@@ -38,16 +38,21 @@ enum : uint32_t {
   AppendStatusCode = 252
 };
 
+enum : uint64_t {
+  InvalidNonce = (uint64_t)(-1)
+};
+
 // Append Status
 enum class AppendStatus : uint64_t {
   SUCCESS = 0,
   FAILURE_NACK = 1,
   FAILURE_TIMEOUT = 2,
-  FAILURE_VALIDATION = 3,
-  FAILURE_NX_CERT = 4,
+  FAILURE_VALIDATION_APP = 4,
+  FAILURE_VALIDATION_PROTO = 5,
   FAILURE_STORAGE = 98,
-  NOTINITIALIZED = 99,
 };
+
+std::string statusToString(AppendStatus status);
 
 } // namespace ndnrevoke::appendtlv
 

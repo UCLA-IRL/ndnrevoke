@@ -19,25 +19,12 @@ CtModule::CtModule(ndn::Face& face, ndn::KeyChain& keyChain, const std::string& 
   // load the config and create storage
   m_config.load(configPath);
   m_storage = CtStorage::createCtStorage(storageType, m_config.ctPrefix, "");
-  registerPrefix();
-
-  m_handle = std::make_shared<append::HandleCt>(m_config.ctPrefix, face, m_keyChain);
-
-  // register prefixes
-  m_handle->listenOnTopic(Name(m_config.ctPrefix).append("LEDGER").append("append"),
-                          std::bind(&CtModule::onDataSubmission, this, _1));
-
   m_validator.load(m_config.schemaFile);
-}
-
-CtModule::~CtModule()
-{
-  for (auto& handle : m_interestFilterHandles) {
-    handle.cancel();
-  }
-  for (auto& handle : m_registeredPrefixHandles) {
-    handle.unregister();
-  }
+  registerPrefix();
+  
+  Name topic = Name(m_config.ctPrefix).append("LEDGER").append("append");
+  append::CtState ctState(m_config.ctPrefix, topic, m_face, m_keyChain, m_validator);
+  ctState.listen(std::bind(&CtModule::onDataSubmission, this, _1));
 }
 
 void
@@ -56,43 +43,36 @@ CtModule::registerPrefix()
       for (auto& zone : m_config.recordZones) {
         auto filterId = m_face.setInterestFilter(zone, [this] (auto&&, const auto& i) { onQuery(i); });
         NDN_LOG_TRACE("Registering filter for recordZone " << zone);
-        m_interestFilterHandles.push_back(filterId);
+        m_handle.handleFilter(filterId);
       }
     },
     [this] (auto&&, const auto& reason) { onRegisterFailed(reason); });
-  m_registeredPrefixHandles.push_back(prefixId);
+  m_handle.handlePrefix(prefixId);
 }
 
 AppendStatus 
 CtModule::onDataSubmission(const Data& data)
 {
   NDN_LOG_TRACE("Received Submission " << data);
-  Name name = data.getName();
-
-  // TODO: validate with trust schema
-  if (Certificate::isValidName(name)) {
-    // TODO: do sth
-    try {
+  AppendStatus ret;
+  m_validator.validate(data,
+    [this, &data, &ret] (const Data&) {
+      NDN_LOG_TRACE("Data conforms to trust schema");
       m_storage->addData(data);
-      return AppendStatus::SUCCESS;
-    }
-    catch (std::exception& e) {
-      NDN_LOG_TRACE("Submission failed because of: " << e.what());
-      return AppendStatus::FAILURE_STORAGE;
-    }
-  }
-  else if (record::Record::isValidName(name)) {
-    // TODO: do sth
-    try {
-      m_storage->addData(data);
-      return AppendStatus::SUCCESS;
-    }
-    catch (std::exception& e) {
-      NDN_LOG_TRACE("Submission failed because of: " << e.what());
-      return AppendStatus::FAILURE_STORAGE;
-    }
-  }
-  return AppendStatus::FAILURE_VALIDATION;
+      try {
+        m_storage->addData(data);
+        ret = AppendStatus::SUCCESS;
+      }
+      catch (std::exception& e) {
+        NDN_LOG_TRACE("Submission failed because of: " << e.what());
+        ret =  AppendStatus::FAILURE_STORAGE;
+      }
+    },
+    [this, &data, &ret] (const Data&, const ndn::security::ValidationError& error) {
+      NDN_LOG_ERROR("Error authenticating data: " << error);
+      ret = AppendStatus::FAILURE_VALIDATION_APP;
+    });
+  return ret;
 }
 
 void

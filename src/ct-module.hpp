@@ -2,7 +2,8 @@
 #define NDNREVOKE_CT_MODULE_HPP
 
 #include "storage/ct-storage.hpp"
-#include "append/handle-ct.hpp"
+#include "append/handle.hpp"
+#include "append/ct-state.hpp"
 #include "ct-configuration.hpp"
 #include "nack.hpp"
 
@@ -18,8 +19,6 @@ class CtModule : boost::noncopyable
 public:
   CtModule(ndn::Face& face, ndn::KeyChain& keyChain, const std::string& configPath,
            const std::string& storageType = "ct-storage-memory");
-
-  ~CtModule();
 
   const std::unique_ptr<CtStorage>&
   getCtStorage()
@@ -56,10 +55,8 @@ NDNREVOKE_PUBLIC_WITH_TESTS_ELSE_PRIVATE:
   ndn::KeyChain& m_keyChain;
   ndn::ValidatorConfig m_validator{m_face};
   std::unique_ptr<CtStorage> m_storage;
-  std::list<ndn::RegisteredPrefixHandle> m_registeredPrefixHandles;
-  std::list<ndn::InterestFilterHandle> m_interestFilterHandles;
 
-  std::shared_ptr<append::HandleCt> m_handle;
+  append::Handle m_handle;
 };
 
 } // namespace ndnrevoke::ct

@@ -1,5 +1,4 @@
-#include "append/handle-client.hpp"
-#include "append/handle-ct.hpp"
+#include "append/client.hpp"
 #include "revoker.hpp"
 #include "checker.hpp"
 
@@ -65,9 +64,13 @@ main(int argc, char* argv[])
   auto ownerCert = issueCertificate(ownerKey.getDefaultCertificate(), issuerCert.getName(),
                                     Name::Component("cs-signer"));
   // init append client for revoker and callbacks for checker
-  append::HandleClient client(ownerId.getName(), face, keyChain);
-  checker::Checker checker(face, "trust-schema.conf");
 
+  ndn::ValidatorConfig validator{face};
+  Name topic = Name(ownerId.getName()).append("append");
+  validator.load("trust-schema.conf");
+
+  append::Client client(ownerId.getName(), face, keyChain, validator);
+  checker::Checker checker(face, "trust-schema.conf");
 
   // scheduled record appending after prefix registeration
   scheduler.schedule(CHECKOUT_INTERVAL, [&] {
@@ -81,7 +84,7 @@ main(int argc, char* argv[])
           content.parse();
           for (auto elem : content.elements()) {
             uint64_t status = readNonNegativeInteger(elem);
-            NDN_LOG_INFO("Append status [SUCCESS]: " << append::statusToString(static_cast<appendtlv::AppendStatus>(status)));
+            NDN_LOG_INFO("Append status [SUCCESS]: " << appendtlv::statusToString(static_cast<appendtlv::AppendStatus>(status)));
           }
       },
       [&] (auto& i) {
@@ -89,7 +92,7 @@ main(int argc, char* argv[])
           content.parse();
           for (auto elem : content.elements()) {
             uint64_t status = readNonNegativeInteger(elem);
-            NDN_LOG_INFO("Append status [FAILURE]: " << append::statusToString(static_cast<appendtlv::AppendStatus>(status)));
+            NDN_LOG_INFO("Append status [FAILURE]: " << appendtlv::statusToString(static_cast<appendtlv::AppendStatus>(status)));
           }
       },
       [] (auto&&) {

@@ -11,12 +11,16 @@
 #include <ndn-cxx/encoding/block-helpers.hpp>
 #include <ndn-cxx/interest.hpp>
 #include <ndn-cxx/name.hpp>
+#include <ndn-cxx/face.hpp>
 #include <ndn-cxx/security/certificate.hpp>
 #include <ndn-cxx/util/exception.hpp>
 #include <ndn-cxx/util/logger.hpp>
 #include <ndn-cxx/util/optional.hpp>
 #include <ndn-cxx/util/sha256.hpp>
 #include <ndn-cxx/util/time.hpp>
+
+#include <ndn-cxx/security/validator-config.hpp>
+#include <ndn-cxx/security/key-chain.hpp>
 
 #include <boost/algorithm/string.hpp>
 #include <boost/assert.hpp>

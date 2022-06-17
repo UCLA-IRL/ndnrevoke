@@ -19,8 +19,8 @@ BOOST_AUTO_TEST_CASE(Initialization)
   BOOST_CHECK_EQUAL(ct.getCtConf().ctPrefix, Name("/ndn"));
 
   advanceClocks(time::milliseconds(20), 60);
-  BOOST_CHECK_EQUAL(ct.m_registeredPrefixHandles.size(), 1); // removed local discovery registration
-  BOOST_CHECK_EQUAL(ct.m_interestFilterHandles.size(), 2);
+  BOOST_CHECK_EQUAL(ct.m_handle.m_registeredPrefixHandles.size(), 1); // removed local discovery registration
+  BOOST_CHECK_EQUAL(ct.m_handle.m_interestFilterHandles.size(), 2);
 }
 
 BOOST_AUTO_TEST_CASE(HandleQueryAndRecord)
