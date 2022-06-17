@@ -5,8 +5,6 @@ namespace tlv = appendtlv;
 
 NDN_LOG_INIT(ndnrevoke.append);
 
-const ssize_t MAX_RETRIES = 6;
-
 Client::Client(const Name& prefix, ndn::Face& face, ndn::KeyChain& keyChain, ndn::security::Validator& validator)
   : m_face(face)
   , m_prefix(prefix)

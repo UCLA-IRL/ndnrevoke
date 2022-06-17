@@ -1,7 +1,6 @@
 #include "append/handle.hpp"
 
 namespace ndnrevoke::append {
-NDN_LOG_INIT(ndnrevoke.append);
 
 Handle::~Handle()
 {

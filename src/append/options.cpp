@@ -2,7 +2,6 @@
 
 namespace ndnrevoke::append {
 namespace tlv = appendtlv;
-NDN_LOG_INIT(ndnrevoke.append);
 
 std::shared_ptr<Interest>
 ClientOptions::makeNotification(const Name& topic)
