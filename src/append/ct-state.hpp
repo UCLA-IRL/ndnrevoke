@@ -41,8 +41,6 @@ NDNREVOKE_PUBLIC_WITH_TESTS_ELSE_PRIVATE:
 
   ndn::KeyChain& m_keyChain;
   ndn::security::Validator& m_validator;
-
-  bool m_isDone = false;
 };
 
 } // namespace ndnrevoke:append

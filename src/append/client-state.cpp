@@ -32,13 +32,13 @@ ClientState::dispatchNotification(const Interest& interest)
 {
   if (m_retryCount++ > CLIENT_MAX_RETRIES) {
     m_tCb(interest);
+    delete this;
     return;
   }
   
   NDN_LOG_TRACE("Sending out notification " << interest);
   m_face.expressInterest(interest, 
-    [this] (auto&&, const auto& notificationAck) { 
-      m_isDone = true;
+    [this] (auto&&, const auto& notificationAck) {
       m_validator.validate(notificationAck, 
         [this, notificationAck] (const Data&) {
           NDN_LOG_DEBUG("ACK conforms to trust schema");
@@ -47,9 +47,10 @@ ClientState::dispatchNotification(const Interest& interest)
         [this, notificationAck] (const Data&, const ndn::security::ValidationError& error) {
           NDN_LOG_ERROR("Error authenticating ACK: " << error);
           m_fCb(notificationAck);
+          delete this;
         });
     }, 
-    [this] (const auto& i, auto& n) { m_nCb(i, n); },
+    [this] (const auto& i, auto& n) { m_nCb(i, n); delete this; },
     [this, interest] (const auto&) { dispatchNotification(interest);}
   );
 }
@@ -62,6 +63,7 @@ ClientState::appendData(const Name& topic, const std::list<Data>& data, const on
   if (topic.empty() || data.size() == 0 || 
       data.front().getName().empty()) {
     NDN_LOG_ERROR("Empty data or topic, return");
+    delete this;
     return;
   }
   
@@ -98,10 +100,12 @@ ClientState::onValidationSuccess(const Data& data)
     }
     else {
       m_fCb(data);
+      delete this;
       return;
     }
   }
   NDN_LOG_TRACE("All succeeded\n");
   m_sCb(data);
+  delete this;
 }
 } // namespace ndnrevoke::append

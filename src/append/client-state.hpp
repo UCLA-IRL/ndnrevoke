@@ -35,12 +35,6 @@ public:
     return m_options.getNonce();
   }
 
-  bool
-  isDone() const
-  {
-    return m_isDone;
-  }
-
 NDNREVOKE_PUBLIC_WITH_TESTS_ELSE_PRIVATE:
   void
   dispatchNotification(const Interest& interest);
@@ -60,8 +54,6 @@ NDNREVOKE_PUBLIC_WITH_TESTS_ELSE_PRIVATE:
 
   ndn::KeyChain& m_keyChain;
   ndn::security::Validator& m_validator;
-
-  bool m_isDone = false;
 };
 
 } // namespace ndnrevoke:append

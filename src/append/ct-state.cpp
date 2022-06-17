@@ -82,7 +82,6 @@ CtState::listen(const UpdateCallback& onUpdateCallback)
 void
 CtState::onValidationSuccess(const Data& data, std::shared_ptr<ClientOptions> client)
 {
-  NDN_LOG_DEBUG("in validator success");
   auto content = data.getContent();
 
   std::list<AppendStatus> statusList;
@@ -118,7 +117,6 @@ void
 CtState::onValidationFailure(const Data& data, const ndn::security::ValidationError& error,
                               std::shared_ptr<ClientOptions> client)
 {
-  NDN_LOG_DEBUG("in validator failure");
   // acking notification
   NDN_LOG_TRACE("Putting notification ack");
   auto ack = m_options.makeNotificationAck(*client, {AppendStatus::FAILURE_VALIDATION_PROTO});

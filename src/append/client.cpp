@@ -30,7 +30,8 @@ Client::appendData(const Name& topic, const std::list<Data>& data,
                    const onTimeoutCallback timeoutCb, const onNackCallback nackCb)
 {
   uint64_t nonce = ndn::random::generateSecureWord64();
-  auto state = std::make_shared<ClientState>(m_prefix, m_face, nonce, m_keyChain, m_validator);
+  // auto state = std::make_shared<ClientState>(m_prefix, m_face, nonce, m_keyChain, m_validator);
+  auto state = new ClientState(m_prefix, m_face, nonce, m_keyChain, m_validator);
   state->appendData(topic, data, successCb, failureCb, timeoutCb, nackCb);
   return nonce;
 }

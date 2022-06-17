@@ -1,6 +1,7 @@
 #include "append/ct-state.hpp"
 #include "append/client.hpp"
 #include "test-common.hpp"
+#include <iostream>
 
 namespace ndnrevoke {
 namespace tests {
@@ -88,12 +89,13 @@ BOOST_AUTO_TEST_CASE(AppendHandleClientCallback)
   auto cert2 = key2.getDefaultCertificate();
 
   DummyClientFace face(io, m_keyChain, {true, true});
+  DummyClientFace face2(io, m_keyChain, {true, true});
   ndn::ValidatorConfig validator{face};
   Name topic = Name(identity.getName()).append("append");
   validator.load("tests/unit-tests/config-files/trust-schema.conf");
 
-  Client client(identity2.getName(), face, m_keyChain, validator);
-  Data appData("/ndn/site3/appData/abc");
+  Client client(identity2.getName(), face2, m_keyChain, validator);
+  Data appData("/ndn/site3/abc/appData");
   const std::string str("Hello, world!");
   appData.setContent(make_span<const uint8_t>(reinterpret_cast<const uint8_t*>(str.data()), str.size()));
   m_keyChain.sign(appData, ndn::signingByIdentity(identity2));
@@ -115,6 +117,7 @@ BOOST_AUTO_TEST_CASE(AppendHandleClientCallback)
       BOOST_CHECK_EQUAL(readNonNegativeInteger(*content.elements_begin()),
                         static_cast<uint64_t>(tlv::AppendStatus::SUCCESS));
     }, nullptr, nullptr, nullptr);
+  
   advanceClocks(time::milliseconds(20), 60);
   ClientOptions clientOps(identity2.getName(), nonce);
   auto submission = clientOps.makeSubmission(topic, {appData});
@@ -122,6 +125,12 @@ BOOST_AUTO_TEST_CASE(AppendHandleClientCallback)
   face.receive(*submission);
   advanceClocks(time::milliseconds(20), 60);
   face.receive(cert2);
+  advanceClocks(time::milliseconds(20), 60);
+
+  CtOptions ctOps(topic);
+  auto ack = ctOps.makeNotificationAck(clientOps, {tlv::AppendStatus::SUCCESS});
+  m_keyChain.sign(*ack, ndn::signingByIdentity(identity));
+  face2.receive(*ack);
   advanceClocks(time::milliseconds(20), 60);
 }
 
