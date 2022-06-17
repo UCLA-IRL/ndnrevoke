@@ -68,7 +68,7 @@ CtModule::onDataSubmission(const Data& data)
         ret =  AppendStatus::FAILURE_STORAGE;
       }
     },
-    [this, &ret] (const Data&, const ndn::security::ValidationError& error) {
+    [&ret] (const Data&, const ndn::security::ValidationError& error) {
       NDN_LOG_ERROR("Error authenticating data: " << error);
       ret = AppendStatus::FAILURE_VALIDATION_APP;
     });
