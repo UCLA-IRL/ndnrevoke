@@ -108,7 +108,7 @@ BOOST_AUTO_TEST_CASE(AppendHandleClientCallback)
   });
   advanceClocks(time::milliseconds(20), 60);
 
-  uint64_t nonce = client.appendData(topic, {appData}, 
+  auto state = client.appendData(topic, {appData}, 
     [] (auto& i) {
       Block content = i.getContent();
       content.parse();
@@ -119,7 +119,7 @@ BOOST_AUTO_TEST_CASE(AppendHandleClientCallback)
     }, nullptr, nullptr, nullptr);
   
   advanceClocks(time::milliseconds(20), 60);
-  ClientOptions clientOps(identity2.getName(), nonce);
+  ClientOptions clientOps(identity2.getName(), state->getNonce());
   auto submission = clientOps.makeSubmission(topic, {appData});
   m_keyChain.sign(*submission, ndn::signingByIdentity(identity2));
   face.receive(*submission);

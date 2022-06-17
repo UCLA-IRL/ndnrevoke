@@ -12,7 +12,7 @@ public:
   explicit
   Client(const Name& prefix, ndn::Face& face, ndn::KeyChain& keyChain, ndn::security::Validator& validator);
 
-  uint64_t
+  std::shared_ptr<ClientState>
   appendData(const Name& topic, const std::list<Data>& data,
              const onSuccessCallback successCb, const onFailureCallback failureCb,
              const onTimeoutCallback timeoutCb, const onNackCallback nackCb);
