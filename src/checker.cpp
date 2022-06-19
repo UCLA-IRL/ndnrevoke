@@ -55,7 +55,7 @@ Checker::doCheck(const Name ledgerPrefix, const Certificate& certData, const Nam
     NDN_LOG_TRACE("checking: " << recordName);
   }
   catch (std::exception& e) {
-    NDN_LOG_ERROR("cannot set checker state");
+    NDN_LOG_ERROR("Cannot set checker state");
   }
   m_face.expressInterest(interest,
                          std::bind(&Checker::onData, this, _1, _2),
@@ -87,7 +87,7 @@ Checker::onValidationSuccess(const Data& data)
   if (record::Record::isValidName(dataName)) {
     auto iter = m_states.find(data.getName());
     if (iter == m_states.end()) {
-      NDN_LOG_ERROR("cannot get checker state");
+      NDN_LOG_ERROR("Cannot get checker state");
       return;
     }
     iter->second.rCb(record::Record(data));
@@ -100,7 +100,7 @@ Checker::onValidationSuccess(const Data& data)
     nack::RecordNack nack(data);
     auto iter = m_states.find(nack.getRecordName());
     if (iter == m_states.end()) {
-      NDN_LOG_ERROR("cannot get checker state");
+      NDN_LOG_ERROR("Cannot get checker state");
       return;
     }
     iter->second.vCb(nack);
@@ -119,10 +119,11 @@ Checker::onValidationFailure(const Data& data, const ndn::security::ValidationEr
   if (record::Record::isValidName(dataName)) {
     auto iter = m_states.find(data.getName());
     if (iter == m_states.end()) {
-      NDN_LOG_ERROR("cannot get checker state");
+      iter->second.fCb(iter->second.cert, 
+                       Error(Error::Code::IMPLEMENTATION_ERROR, "Cannot get checker state"));
       return;
     }
-    iter->second.fCb(iter->second.cert);
+    iter->second.fCb(iter->second.cert, Error(Error::Code::VALIDATION_ERROR, error.getInfo()));
     m_states.erase(iter);
     return;
   }
@@ -131,10 +132,11 @@ Checker::onValidationFailure(const Data& data, const ndn::security::ValidationEr
   if (nack::RecordNack::isValidName(dataName)) {
     auto iter = m_states.find(nack::RecordNack(data).getRecordName());
     if (iter == m_states.end()) {
-      NDN_LOG_ERROR("cannot get checker state");
+      iter->second.fCb(iter->second.cert, 
+                       Error(Error::Code::IMPLEMENTATION_ERROR, "Cannot get checker state"));
       return;
     }
-    iter->second.fCb(iter->second.cert);
+    iter->second.fCb(iter->second.cert, Error(Error::Code::VALIDATION_ERROR, error.getInfo()));
     m_states.erase(iter);
     return;
   }
@@ -145,10 +147,11 @@ Checker::onNack(const Interest& interest, const ndn::lp::Nack& nack)
 {
   auto iter = m_states.find(interest.getName());
   if (iter == m_states.end()) {
-    NDN_LOG_ERROR("cannot get checker state");
+    NDN_LOG_ERROR("Cannot get checker state");
   }
   NDN_LOG_ERROR("Interest " << interest << " nack:" << nack.getReason());
-  iter->second.fCb(iter->second.cert);
+  iter->second.fCb(iter->second.cert, 
+                   Error(Error::Code::NACK, interest.getName().toUri()));
   m_states.erase(iter);
 }
 
@@ -157,7 +160,7 @@ Checker::onTimeout(const Interest& interest)
 {
   auto iter = m_states.find(interest.getName());
   if (iter == m_states.end()) {
-    NDN_LOG_ERROR("cannot get checker state");
+    NDN_LOG_ERROR("Cannot get checker state");
     return;
   }
   if (iter->second.remainingRetry-- > 0) {
@@ -173,7 +176,8 @@ Checker::onTimeout(const Interest& interest)
   }
   else {
     NDN_LOG_ERROR("Interest " << interest << " timeout");
-    iter->second.fCb(iter->second.cert);
+    iter->second.fCb(iter->second.cert, 
+                     Error(Error::Code::TIMEOUT, interest.getName().toUri()));
     m_states.erase(iter);
   }
 }

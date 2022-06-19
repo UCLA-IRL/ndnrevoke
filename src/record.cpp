@@ -126,16 +126,36 @@ Record::isValidName(const Name name)
          Certificate::isValidName(certName);
 }
 
+std::string reasonToString(tlv::ReasonCode reason)
+{
+  switch (reason) {
+    case tlv::ReasonCode::UNSPECIFIED:
+      return "UNSPECIFIED";
+    case tlv::ReasonCode::KEY_COMPROMISE:
+      return "KEY_COMPROMISE";
+    case tlv::ReasonCode::CA_COMPROMISE:
+      return "CA_COMPROMISE";
+    case tlv::ReasonCode::SUPERSEDED:
+      return "SUPERSEDED";
+    case tlv::ReasonCode::INVALID:
+      return "INVALID";
+    default:
+      return "Unrecognized reason";
+  }
+}
+
 std::ostream&
 operator<<(std::ostream& os, const Record& record)
 {
   os << "Name: " << record.getName() << "\n"
      << "   Public Key Hash: [" <<  ndn::toHex(record.getPublicKeyHash()) << "]\n"
-     << "   Revocation Timestamp: [" << time::toString(time::fromUnixTimestamp(record.getTimestamp())) << "]\n"
-     << "   Revocation Reason: [" << static_cast<uint64_t>(record.getReason()) << "]\n";
+     << "   Revocation Timestamp: ["
+     << time::toString(time::fromUnixTimestamp(record.getTimestamp())) << "]\n"
+     << "   Revocation Reason: [" << reasonToString(record.getReason()) << "]\n";
 
   if (record.hasNotBefore()) {
-    os << "   Revocation Not Before: [" << record.getNotBefore().value() << "]\n";
+    os << "   Revocation Not Before: ["
+       << time::toString(time::fromUnixTimestamp(record.getNotBefore().value())) << "]\n";
   }
   return os;
 }

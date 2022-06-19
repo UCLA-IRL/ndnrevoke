@@ -14,8 +14,7 @@ public:
 
   std::shared_ptr<ClientState>
   appendData(const Name& topic, const std::list<Data>& data,
-             const onSuccessCallback successCb, const onFailureCallback failureCb,
-             const onTimeoutCallback timeoutCb, const onNackCallback nackCb);
+             const onSuccessCallback successCb, const onFailureCallback failureCb);
 
 NDNREVOKE_PUBLIC_WITH_TESTS_ELSE_PRIVATE:
   ndn::Face& m_face;

@@ -31,3 +31,4 @@ __pycache__/
 
 # Other
 /VERSION.info
+*.cert

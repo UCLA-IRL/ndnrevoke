@@ -24,12 +24,11 @@ Client::Client(const Name& prefix, ndn::Face& face, ndn::KeyChain& keyChain, ndn
 
 std::shared_ptr<ClientState>
 Client::appendData(const Name& topic, const std::list<Data>& data,
-                   const onSuccessCallback successCb, const onFailureCallback failureCb,
-                   const onTimeoutCallback timeoutCb, const onNackCallback nackCb)
+                   const onSuccessCallback successCb, const onFailureCallback failureCb)
 {
   auto state = std::make_shared<ClientState>(m_prefix, m_face, ndn::random::generateSecureWord64(),
                                              m_keyChain, m_validator);
-  state->appendData(topic, data, successCb, failureCb, timeoutCb, nackCb);
+  state->appendData(topic, data, successCb, failureCb);
   return state;
 }
 

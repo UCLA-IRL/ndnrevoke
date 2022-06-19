@@ -52,6 +52,8 @@ BOOST_AUTO_TEST_CASE(HandleQueryAndRecord)
     nullptr
   );
   advanceClocks(time::milliseconds(20), 60);
+  face.receive(cert2);
+  advanceClocks(time::milliseconds(20), 60);
 }
 
 BOOST_AUTO_TEST_CASE(HandleQueryAndNack)

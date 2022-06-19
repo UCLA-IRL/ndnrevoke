@@ -3,13 +3,12 @@
 
 #include "append/handle.hpp"
 #include "append/options.hpp"
+#include "error.hpp"
 
 namespace ndnrevoke::append {
 
 using onSuccessCallback = std::function<void(const Data&)>; // notification ack
-using onFailureCallback = std::function<void(const Data&)>; // notification ack
-using onTimeoutCallback = std::function<void(const Interest&)>; // notification interest
-using onNackCallback = std::function<void(const Interest&, const ndn::lp::Nack& nack)>; // nack
+using onFailureCallback = std::function<void(const std::list<Data>&, const Error&)>; // notification ack
 
 class ClientState : boost::noncopyable
 {
@@ -26,8 +25,7 @@ public:
 
   void
   appendData(const Name& topic, const std::list<Data>& data,
-             const onSuccessCallback successCb, const onFailureCallback failureCb,
-             const onTimeoutCallback timeoutCb, const onNackCallback nackCb);
+             const onSuccessCallback successCb, const onFailureCallback failureCb);
 
   uint64_t
   getNonce() const
@@ -37,7 +35,7 @@ public:
 
 NDNREVOKE_PUBLIC_WITH_TESTS_ELSE_PRIVATE:
   void
-  dispatchNotification(const Interest& interest);
+  dispatchNotification(const std::list<Data>& data, Interest& interest);
 
   void
   onValidationSuccess(const Data& data);
@@ -49,8 +47,6 @@ NDNREVOKE_PUBLIC_WITH_TESTS_ELSE_PRIVATE:
 
   onSuccessCallback m_sCb;
   onFailureCallback m_fCb;
-  onTimeoutCallback m_tCb;
-  onNackCallback m_nCb;
 
   ndn::KeyChain& m_keyChain;
   ndn::security::Validator& m_validator;

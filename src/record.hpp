@@ -94,6 +94,8 @@ private:
   optional<time::milliseconds> m_notBefore;
 };
 
+std::string reasonToString(tlv::ReasonCode reason);
+
 std::ostream&
 operator<<(std::ostream& os, const Record& record);
 } // namespace ndnrevoke::record

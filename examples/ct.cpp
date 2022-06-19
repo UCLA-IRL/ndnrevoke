@@ -16,14 +16,7 @@ static ndn::KeyChain keyChain;
 static int
 main(int argc, char* argv[])
 {
-  try {
-    keyChain.getPib().getIdentity(Name("/ndn/edu/ucla/v2"));
-  }
-  catch (const std::exception&) {
-    keyChain.createIdentity(Name("/ndn/edu/ucla/v2"));
-  }
-
-  CtModule ct(face, keyChain, "examples/ct.config");
+  CtModule ct(face, keyChain, "ct.config");
   face.processEvents();
   return 0;
 }

@@ -23,8 +23,8 @@ CtModule::CtModule(ndn::Face& face, ndn::KeyChain& keyChain, const std::string& 
   registerPrefix();
   
   Name topic = Name(m_config.ctPrefix).append("LEDGER").append("append");
-  append::CtState ctState(m_config.ctPrefix, topic, m_face, m_keyChain, m_validator);
-  ctState.listen(std::bind(&CtModule::onDataSubmission, this, _1));
+  m_ctState = std::make_unique<append::CtState>(m_config.ctPrefix, topic, m_face, m_keyChain, m_validator);
+  m_ctState->listen(std::bind(&CtModule::onDataSubmission, this, _1));
 }
 
 void
@@ -57,15 +57,14 @@ CtModule::onDataSubmission(const Data& data)
   AppendStatus ret;
   m_validator.validate(data,
     [this, &data, &ret] (const Data&) {
-      NDN_LOG_TRACE("Data conforms to trust schema");
-      m_storage->addData(data);
+      NDN_LOG_TRACE("Submitted Data conforms to trust schema");
       try {
         m_storage->addData(data);
         ret = AppendStatus::SUCCESS;
       }
       catch (std::exception& e) {
         NDN_LOG_TRACE("Submission failed because of: " << e.what());
-        ret =  AppendStatus::FAILURE_STORAGE;
+        ret = AppendStatus::FAILURE_STORAGE;
       }
     },
     [&ret] (const Data&, const ndn::security::ValidationError& error) {
@@ -78,6 +77,11 @@ CtModule::onDataSubmission(const Data& data)
 void
 CtModule::onQuery(const Interest& query) {
   // need to validate query format
+  if (query.getForwardingHint().empty()) {
+    // non-related, discard
+    return;
+  }
+
   NDN_LOG_TRACE("Received Query " << query);
   try {
     Data data = m_storage->getData(query.getName());

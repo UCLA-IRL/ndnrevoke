@@ -81,6 +81,9 @@ public:
   static const ssize_t REVOKE_OFFSET;
 };
 
+std::ostream&
+operator<<(std::ostream& os, const Nack& nack);
+
 } // namespace ndnrevoke::nack
 
 #endif // NDNREVOKE_NACK_HPP

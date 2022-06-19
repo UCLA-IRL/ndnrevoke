@@ -116,7 +116,7 @@ BOOST_AUTO_TEST_CASE(AppendHandleClientCallback)
       BOOST_CHECK_EQUAL(content.elements_begin()->type(), tlv::AppendStatusCode);
       BOOST_CHECK_EQUAL(readNonNegativeInteger(*content.elements_begin()),
                         static_cast<uint64_t>(tlv::AppendStatus::SUCCESS));
-    }, nullptr, nullptr, nullptr);
+    }, nullptr);
   
   advanceClocks(time::milliseconds(20), 60);
   ClientOptions clientOps(identity2.getName(), state->getNonce());

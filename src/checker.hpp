@@ -3,6 +3,7 @@
 
 #include "record.hpp"
 #include "nack.hpp"
+#include "error.hpp"
 #include <ndn-cxx/security/key-chain.hpp>
 #include <ndn-cxx/face.hpp>
 #include <ndn-cxx/security/validator-config.hpp>
@@ -11,8 +12,7 @@ namespace ndnrevoke::checker {
 
 using onValidCallback = std::function<void(const nack::RecordNack&)>;
 using onRevokedCallback = std::function<void(const record::Record&)>;
-// cuz timeout or nack, or unknown type data, return the following reason
-using onFailureCallback = std::function<void(const Certificate&)>;
+using onFailureCallback = std::function<void(const Certificate&, const Error&)>;
 
 class Checker : boost::noncopyable
 {
