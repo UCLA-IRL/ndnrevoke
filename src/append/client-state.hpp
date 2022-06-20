@@ -7,46 +7,39 @@
 
 namespace ndnrevoke::append {
 
-using onSuccessCallback = std::function<void(const Data&)>; // notification ack
-using onFailureCallback = std::function<void(const std::list<Data>&, const Error&)>; // notification ack
-
 class ClientState : boost::noncopyable
 {
 public:
 
   explicit
-  ClientState(const Name& prefix, ndn::Face& face, uint64_t nonce,
+  ClientState(const Name& prefix, ndn::Face& face,
               ndn::KeyChain& keyChain, ndn::security::Validator& validator);
 
   explicit
   ClientState(const Name& prefix, ndn::Face& face,
-              uint64_t nonce, const Name& fwHint,
+              const Name& fwHint,
               ndn::KeyChain& keyChain, ndn::security::Validator& validator);
 
-  void
-  appendData(const Name& topic, const std::list<Data>& data,
-             const onSuccessCallback successCb, const onFailureCallback failureCb);
-
   uint64_t
-  getNonce() const
-  {
-    return m_options.getNonce();
-  }
+  appendData(const Name& topic, const std::list<Data>& data,
+             const ClientOptions::onSuccessCallback onSuccess,
+             const ClientOptions::onFailureCallback onFailure);
 
 NDNREVOKE_PUBLIC_WITH_TESTS_ELSE_PRIVATE:
   void
-  dispatchNotification(const std::list<Data>& data, Interest& interest);
+  dispatchNotification(const std::shared_ptr<ClientOptions>& options, const std::list<Data>& data);
 
   void
-  onValidationSuccess(const Data& data);
+  onValidationSuccess(const std::shared_ptr<ClientOptions>& options, const std::list<Data>& data, const Data& ack);
+
+  void
+  onValidationFailure(const std::shared_ptr<ClientOptions>& options, const std::list<Data>& data,
+                      const ndn::security::ValidationError& error);
 
   ssize_t m_retryCount = 0;
   ndn::Face& m_face;
-  ClientOptions m_options;
+  Name m_prefix;
   Handle m_handle;
-
-  onSuccessCallback m_sCb;
-  onFailureCallback m_fCb;
 
   ndn::KeyChain& m_keyChain;
   ndn::security::Validator& m_validator;

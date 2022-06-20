@@ -22,7 +22,7 @@ CtState::serveClient(std::shared_ptr<ClientOptions> client)
 {
   auto fetcher =  m_options.makeFetcher(*client);
   if (m_retryCount++ > CT_MAX_RETRIES) {
-    NDN_LOG_ERROR("Interest " << fetcher << " run out of " << CT_MAX_RETRIES << " retries");
+    NDN_LOG_ERROR("Interest " << *fetcher << " run out of " << CT_MAX_RETRIES << " retries");
     // acking notification
     auto ack = m_options.makeNotificationAck(*client, {AppendStatus::FAILURE_TIMEOUT});
     m_keyChain.sign(*ack, ndn::signingByIdentity(m_prefix));

@@ -35,8 +35,8 @@ BOOST_AUTO_TEST_CASE(AppendCtStateNotify)
   // better to separate into a specific encoder
   // notification parameter: m_prefix, [m_forwardingHint], nonce
   uint64_t nonce = ndn::random::generateSecureWord64();
-  ClientOptions clientOps(identity2.getName(), nonce);
-  face.receive(*clientOps.makeNotification(topic));
+  ClientOptions clientOps(identity2.getName(), topic, nonce, nullptr, nullptr);
+  face.receive(*clientOps.makeNotification());
   advanceClocks(time::milliseconds(20), 60);
 }
 
@@ -65,11 +65,12 @@ BOOST_AUTO_TEST_CASE(AppendCtStateFetch)
   });
   advanceClocks(time::milliseconds(20), 60);
 
-  ClientOptions clientOps(identity2.getName(), nonce);
-  face.receive(*clientOps.makeNotification(topic));
+  ClientOptions clientOps(identity2.getName(), topic, nonce,
+                          nullptr, nullptr);
+  face.receive(*clientOps.makeNotification());
   advanceClocks(time::milliseconds(20), 60);
 
-  auto submission = clientOps.makeSubmission(topic, {cert2});
+  auto submission = clientOps.makeSubmission({cert2});
   m_keyChain.sign(*submission, ndn::signingByIdentity(identity2));
   face.receive(*submission);
   advanceClocks(time::milliseconds(20), 60);
@@ -94,7 +95,7 @@ BOOST_AUTO_TEST_CASE(AppendHandleClientCallback)
   Name topic = Name(identity.getName()).append("append");
   validator.load("tests/unit-tests/config-files/trust-schema.conf");
 
-  Client client(identity2.getName(), face2, m_keyChain, validator);
+  ClientState ClientState(identity2.getName(), face2, m_keyChain, validator);
   Data appData("/ndn/site3/abc/appData");
   const std::string str("Hello, world!");
   appData.setContent(make_span<const uint8_t>(reinterpret_cast<const uint8_t*>(str.data()), str.size()));
@@ -108,8 +109,8 @@ BOOST_AUTO_TEST_CASE(AppendHandleClientCallback)
   });
   advanceClocks(time::milliseconds(20), 60);
 
-  auto state = client.appendData(topic, {appData}, 
-    [] (auto& i) {
+  uint64_t nonce = ClientState.appendData(topic, {appData}, 
+    [] (auto&&, auto& i) {
       Block content = i.getContent();
       content.parse();
       BOOST_CHECK_EQUAL(content.elements_size(), 1);
@@ -117,19 +118,22 @@ BOOST_AUTO_TEST_CASE(AppendHandleClientCallback)
       BOOST_CHECK_EQUAL(readNonNegativeInteger(*content.elements_begin()),
                         static_cast<uint64_t>(tlv::AppendStatus::SUCCESS));
     }, nullptr);
-  
   advanceClocks(time::milliseconds(20), 60);
-  ClientOptions clientOps(identity2.getName(), state->getNonce());
-  auto submission = clientOps.makeSubmission(topic, {appData});
+
+  ClientOptions clientOps(identity2.getName(), topic, nonce,
+                          nullptr, nullptr);
+  auto submission = clientOps.makeSubmission({appData});
   m_keyChain.sign(*submission, ndn::signingByIdentity(identity2));
+  CtOptions ctOps(topic);
+  auto ack = ctOps.makeNotificationAck(clientOps, {tlv::AppendStatus::SUCCESS});
+  m_keyChain.sign(*ack, ndn::signingByIdentity(identity));
+
+  face.receive(*clientOps.makeNotification());
+  advanceClocks(time::milliseconds(20), 60);
   face.receive(*submission);
   advanceClocks(time::milliseconds(20), 60);
   face.receive(cert2);
   advanceClocks(time::milliseconds(20), 60);
-
-  CtOptions ctOps(topic);
-  auto ack = ctOps.makeNotificationAck(clientOps, {tlv::AppendStatus::SUCCESS});
-  m_keyChain.sign(*ack, ndn::signingByIdentity(identity));
   face2.receive(*ack);
   advanceClocks(time::milliseconds(20), 60);
 }

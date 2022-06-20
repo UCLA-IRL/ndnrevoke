@@ -4,9 +4,9 @@ namespace ndnrevoke::append {
 namespace tlv = appendtlv;
 
 std::shared_ptr<Interest>
-ClientOptions::makeNotification(const Name& topic)
+ClientOptions::makeNotification()
 {
-  auto notification = std::make_shared<Interest>(Name(topic).append("notify"));
+  auto notification = std::make_shared<Interest>(Name(m_topic).append("notify"));
   // notification parameter: m_prefix, [m_forwardingHint], nonce
   Block params(ndn::tlv::ApplicationParameters);
   params.push_back(makeNestedBlock(appendtlv::AppenderPrefix, getPrefix()));
@@ -20,17 +20,17 @@ ClientOptions::makeNotification(const Name& topic)
 }
 
 const Name
-ClientOptions::makeInterestFilter(const Name& topic)
+ClientOptions::makeInterestFilter()
 {
-  return Name(getPrefix()).append("msg").append(topic)
+  return Name(getPrefix()).append("msg").append(m_topic)
                           .appendNumber(getNonce());
 }
 
 std::shared_ptr<Data>
-ClientOptions::makeSubmission(const Name& topic, const std::list<Data>& dataList)
+ClientOptions::makeSubmission(const std::list<Data>& dataList)
 {
   // Data: /<m_prefix>/msg/<topic>/<nonce>
-  Name name = Name(getPrefix()).append("msg").append(topic)
+  Name name = Name(getPrefix()).append("msg").append(m_topic)
                                .appendNumber(getNonce());
   auto data = std::make_shared<Data>(name);
   Block content(ndn::tlv::Content);
@@ -101,10 +101,12 @@ CtOptions::praseNotification(const Interest& notification)
     }
   }
   if (fwHint.empty()) {
-    return std::make_shared<ClientOptions>(prefix, nonce);    
+    return std::make_shared<ClientOptions>(prefix, m_topic, nonce,
+                                           nullptr, nullptr);    
   }
   else {
-    return std::make_shared<ClientOptions>(prefix, nonce, fwHint);
+    return std::make_shared<ClientOptions>(prefix, m_topic, nonce,
+                                           nullptr, nullptr, fwHint);
   }
 }
 
@@ -125,7 +127,7 @@ std::shared_ptr<Data>
 CtOptions::makeNotificationAck(ClientOptions& client,
                                const std::list<AppendStatus>& statusList)
 {
-  auto notification = client.makeNotification(m_topic);
+  auto notification = client.makeNotification();
   auto data = std::make_shared<Data>(notification->getName());
   // acking notification
   Block content(ndn::tlv::Content);

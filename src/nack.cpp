@@ -74,7 +74,7 @@ operator<<(std::ostream& os, const Nack& nack)
 {
   os << "Nacked Data Name: "
      << nack.getName().getPrefix(Nack::NACK_OFFSET) << "\n"
-     << "NACK Timestamp: ["
+     << "Nack Timestamp: ["
      << time::toString(time::fromUnixTimestamp(nack.getTimestamp())) << "]\n";
   return os;
 }

@@ -17,7 +17,6 @@ static ndn::KeyChain keyChain;
 static ndn::Scheduler scheduler(face.getIoService());
 static const ndn::time::milliseconds CHECKOUT_INTERVAL = 10_ms;
 static const Name ledgerPrefix = Name("/example/LEDGER");
-static std::shared_ptr<append::ClientState> state;
 
 static int
 main(int argc, char* argv[])
@@ -36,7 +35,7 @@ main(int argc, char* argv[])
   Name topic = Name(ownerId.getName()).append("append");
   validator.load("trust-schema.conf");
 
-  append::Client client(ownerId.getName(), face, keyChain, validator);
+  append::ClientState clientState(ownerId.getName(), face, keyChain, validator);
   checker::Checker checker(face, "trust-schema.conf");
 
   face.setInterestFilter(ndn::security::extractIdentityFromCertName(ownerCert.getName()),
@@ -55,9 +54,9 @@ main(int argc, char* argv[])
     auto ownerRecord = revoker.revokeAsOwner(ownerCert, tlv::ReasonCode::SUPERSEDED);
     auto issuerRecord = revoker.revokeAsIssuer(ownerCert, tlv::ReasonCode::SUPERSEDED);
     Name appendPrefix = Name(ledgerPrefix).append("append");
-    state = client.appendData(appendPrefix, {*ownerRecord, *issuerRecord},
-      [&] (auto& i) {
-          Block content = i.getContent();
+    clientState.appendData(appendPrefix, {*ownerRecord, *issuerRecord},
+      [&] (auto&&, auto& ack) {
+          Block content = ack.getContent();
           content.parse();
           for (auto elem : content.elements()) {
             uint64_t status = readNonNegativeInteger(elem);
@@ -65,8 +64,8 @@ main(int argc, char* argv[])
                       << std::endl;
           }
       },
-      [] (auto&&, auto& i) {
-          std::cout << i << std::endl;
+      [] (auto&&, auto& error) {
+          std::cout << error << std::endl;
       }
     );
    }

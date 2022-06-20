@@ -8,90 +8,88 @@ NDN_LOG_INIT(ndnrevoke.append);
 
 const ssize_t CLIENT_MAX_RETRIES = 3;
 
-ClientState::ClientState(const Name& prefix, ndn::Face& face, uint64_t nonce,
+ClientState::ClientState(const Name& prefix, ndn::Face& face,
                          ndn::KeyChain& keyChain, ndn::security::Validator& validator)
   : m_face(face)
-  , m_options(prefix, nonce)
+  , m_prefix(prefix)
   , m_keyChain(keyChain)
   , m_validator(validator)
 {
 }
 
 ClientState::ClientState(const Name& prefix, ndn::Face& face,
-                         uint64_t nonce, const Name& fwHint,
+                         const Name& fwHint,
                          ndn::KeyChain& keyChain, ndn::security::Validator& validator)
   : m_face(face)
-  , m_options(prefix, nonce, fwHint)
+  , m_prefix(prefix)
   , m_keyChain(keyChain)
   , m_validator(validator)
 {
 }
 
 void
-ClientState::dispatchNotification(const std::list<Data>& data, Interest& interest)
+ClientState::dispatchNotification(const std::shared_ptr<ClientOptions>& options, const std::list<Data>& data)
 {
+  auto interest = options->makeNotification();
   if (m_retryCount++ > CLIENT_MAX_RETRIES) {
-    m_fCb(data, Error(Error::Code::TIMEOUT, interest.getName().toUri()));
+    options->onFailure(data, Error(Error::Code::TIMEOUT, interest->getName().toUri()));
     return;
   }
-  
-  NDN_LOG_TRACE("Sending out notification " << interest);
-  interest.refreshNonce();
-  m_face.expressInterest(interest, 
-    [this, data] (auto&&, const auto& notificationAck) {
+  NDN_LOG_TRACE("Sending out notification " << *interest);
+  m_face.expressInterest(*interest, 
+    [this, options, data] (auto&&, const auto& notificationAck) {
       m_validator.validate(notificationAck, 
-        [this, notificationAck] (const Data&) {
+        [this, options, data, notificationAck] (const Data&) {
           NDN_LOG_DEBUG("ACK conforms to trust schema");
-          onValidationSuccess(notificationAck);
+          onValidationSuccess(options, data, notificationAck);
         },
-        [this, data, notificationAck] (const Data&, const ndn::security::ValidationError& error) {
-          NDN_LOG_ERROR("Error authenticating ACK: " << error);
-          m_fCb(data, Error(Error::Code::VALIDATION_ERROR, error.getInfo()));
+        [this, options, data, notificationAck] (const Data&, const ndn::security::ValidationError& error) {
+          onValidationFailure(options, data, error);
         });
     }, 
-    [this, data] (const auto& i, auto& n) {
-      NDN_LOG_ERROR("Notification Nack: " << n.getReason());
-      m_fCb(data, Error(Error::Code::NACK, i.getName().toUri()));
+    [this, options, data] (const auto& i, auto& n) {
+      NDN_LOG_ERROR("Notification Nack: " << n.getReason()); 
+      options->onFailure(data, Error(Error::Code::NACK, i.getName().toUri()));
     },
-    [this, data, &interest] (const auto&) { dispatchNotification(data, interest);}
+    [this, options, data] (const auto&) { dispatchNotification(options, data);}
   );
 }
 
-void
+uint64_t
 ClientState::appendData(const Name& topic, const std::list<Data>& data,
-                        const onSuccessCallback successCb, const onFailureCallback failureCb)
+                        const ClientOptions::onSuccessCallback onSuccess,
+                        const ClientOptions::onFailureCallback onFailure)
 {
   // sanity check
   if (topic.empty() || data.size() == 0 || 
       data.front().getName().empty()) {
     NDN_LOG_ERROR("Empty data or topic, return");
-    return;
+    return appendtlv::InvalidNonce;
   }
-  
-  m_sCb = successCb;
-  m_fCb = failureCb;
 
-  // dispatch notification
-  dispatchNotification(data, *m_options.makeNotification(topic));
+  auto options = std::make_shared<ClientOptions>(m_prefix, topic,
+      ndn::random::generateSecureWord64(), onSuccess, onFailure);
   // prepare submission
-  Name filterName = m_options.makeInterestFilter(topic);
+  Name filterName = options->makeInterestFilter();
   auto filterId = m_face.setInterestFilter(filterName,
-    [this, topic, data] (auto&&, const auto& i) {
-      auto submission = m_options.makeSubmission(topic, data);
-      m_keyChain.sign(*submission, ndn::signingByIdentity(m_options.getPrefix()));
+    [this, options, data] (auto&&, const auto& i) {
+      auto submission = options->makeSubmission(data);
+      m_keyChain.sign(*submission, ndn::signingByIdentity(options->getPrefix()));
       m_face.put(*submission);
-      NDN_LOG_TRACE("Submitting " << *submission);
+      NDN_LOG_TRACE("Submitting " << *submission);  
     }
   );
   // handle the unregsiter task in destructor
   m_handle.handleFilter(filterId);
   NDN_LOG_TRACE("Registering filter for " << filterName);
+  dispatchNotification(options, data);
+  return options->getNonce();
 }
 
 void
-ClientState::onValidationSuccess(const Data& data)
+ClientState::onValidationSuccess(const std::shared_ptr<ClientOptions>& options, const std::list<Data>& data, const Data& ack)
 {
-  auto statusList = m_options.praseAck(data);
+  auto statusList = options->praseAck(ack);
   // if all success, onSuccess; otherwise, failure
   for (auto& status: statusList) {
     if (status == tlv::AppendStatus::SUCCESS) {
@@ -101,6 +99,15 @@ ClientState::onValidationSuccess(const Data& data)
       NDN_LOG_TRACE("There are individual submissions failed by CT");
     }
   }
-  m_sCb(data);
+  options->onSuccess(data, ack);
 }
+
+void
+ClientState::onValidationFailure(const std::shared_ptr<ClientOptions>& options, const std::list<Data>& data,
+                                 const ndn::security::ValidationError& error)
+{
+  NDN_LOG_ERROR("Error authenticating ACK: " << error);
+  options->onFailure(data, Error(Error::Code::VALIDATION_ERROR, error.getInfo()));
+}
+
 } // namespace ndnrevoke::append

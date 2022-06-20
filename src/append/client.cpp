@@ -22,14 +22,14 @@ Client::Client(const Name& prefix, ndn::Face& face, ndn::KeyChain& keyChain, ndn
   m_handle.handlePrefix(prefixId);
 }
 
-std::shared_ptr<ClientState>
+uint64_t
 Client::appendData(const Name& topic, const std::list<Data>& data,
-                   const onSuccessCallback successCb, const onFailureCallback failureCb)
+                   const ClientOptions::onSuccessCallback successCb,
+                   const ClientOptions::onFailureCallback failureCb)
 {
-  auto state = std::make_shared<ClientState>(m_prefix, m_face, ndn::random::generateSecureWord64(),
+  auto state = std::make_shared<ClientState>(m_prefix, m_face,
                                              m_keyChain, m_validator);
-  state->appendData(topic, data, successCb, failureCb);
-  return state;
+  return state->appendData(topic, data, successCb, failureCb);
 }
 
 } // namespace ndnrevoke::append

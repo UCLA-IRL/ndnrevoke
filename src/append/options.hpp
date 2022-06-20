@@ -2,6 +2,7 @@
 #define NDNREVOKE_APPEND_OPTIONS_HPP
 
 #include "append/handle.hpp"
+#include "error.hpp"
 
 namespace ndnrevoke::append {
 using appendtlv::AppendStatus;
@@ -36,15 +37,28 @@ private:
 class ClientOptions : public BaseOptions
 {
 public:
+
+  using onSuccessCallback = std::function<void(const std::list<Data>&, const Data&)>; // notification ack
+  using onFailureCallback = std::function<void(const std::list<Data>&, const Error&)>; // notification ack
+
   explicit
-  ClientOptions(const Name& prefix, uint64_t nonce)
+  ClientOptions(const Name& prefix, const Name& topic, uint64_t nonce,
+                const onSuccessCallback onSuccess, const onFailureCallback onFailure)
   : BaseOptions(prefix, nonce)
+  , m_topic(topic)
+  , m_sCb(onSuccess)
+  , m_fCb(onFailure)
   {
   }
 
   explicit
-  ClientOptions(const Name& prefix, uint64_t nonce, const Name& fwHint)
+  ClientOptions(const Name& prefix, const Name& topic, uint64_t nonce,
+                const onSuccessCallback onSuccess, const onFailureCallback onFailure,
+                const Name& fwHint)
   : BaseOptions(prefix, nonce)
+  , m_topic(topic)
+  , m_sCb(onSuccess)
+  , m_fCb(onFailure)
   , m_fwHint(fwHint)
   {
   }
@@ -56,24 +70,39 @@ public:
   }
 
   std::shared_ptr<Interest>
-  makeNotification(const Name& topic);
+  makeNotification();
 
   const Name
-  makeInterestFilter(const Name& topic);
+  makeInterestFilter();
 
   std::shared_ptr<Interest>
-  makeFetcher(const Name& topic);
+  makeFetcher();
 
   std::shared_ptr<Data>
-  makeSubmission(const Name& topic, const std::list<Data>& dataList);
+  makeSubmission(const std::list<Data>& dataList);
 
   std::shared_ptr<Data>
-  makeNotificationAck(const Name& topic, const std::list<AppendStatus>& statusList);
+  makeNotificationAck(const std::list<AppendStatus>& statusList);
 
   std::list<AppendStatus>
   praseAck(const Data& data); 
 
+  void
+  onSuccess(const std::list<Data>& data, const Data& ack)
+  {
+    return m_sCb(data, ack);
+  }
+
+  void
+  onFailure(const std::list<Data>& data, const Error& error)
+  {
+    return m_fCb(data, error);
+  }
+
 private:
+  Name m_topic;
+  onSuccessCallback m_sCb;
+  onFailureCallback m_fCb;
   Name m_fwHint;
 };
 

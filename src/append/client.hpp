@@ -12,9 +12,10 @@ public:
   explicit
   Client(const Name& prefix, ndn::Face& face, ndn::KeyChain& keyChain, ndn::security::Validator& validator);
 
-  std::shared_ptr<ClientState>
+  uint64_t
   appendData(const Name& topic, const std::list<Data>& data,
-             const onSuccessCallback successCb, const onFailureCallback failureCb);
+             const ClientOptions::onSuccessCallback successCb,
+             const ClientOptions::onFailureCallback failureCb);
 
 NDNREVOKE_PUBLIC_WITH_TESTS_ELSE_PRIVATE:
   ndn::Face& m_face;
