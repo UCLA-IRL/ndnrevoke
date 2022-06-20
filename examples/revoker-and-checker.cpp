@@ -35,8 +35,8 @@ main(int argc, char* argv[])
   Name topic = Name(ownerId.getName()).append("append");
   validator.load("trust-schema.conf");
 
-  append::ClientState clientState(ownerId.getName(), face, keyChain, validator);
-  checker::Checker checker(face, "trust-schema.conf");
+  append::Client client(ownerId.getName(), face, keyChain, validator);
+  checker::Checker checker(face, validator);
 
   face.setInterestFilter(ndn::security::extractIdentityFromCertName(ownerCert.getName()),
     [ownerCert] (auto&&...) {
@@ -54,7 +54,7 @@ main(int argc, char* argv[])
     auto ownerRecord = revoker.revokeAsOwner(ownerCert, tlv::ReasonCode::SUPERSEDED);
     auto issuerRecord = revoker.revokeAsIssuer(ownerCert, tlv::ReasonCode::SUPERSEDED);
     Name appendPrefix = Name(ledgerPrefix).append("append");
-    clientState.appendData(appendPrefix, {*ownerRecord, *issuerRecord},
+    client.appendData(appendPrefix, {*ownerRecord, *issuerRecord},
       [&] (auto&&, auto& ack) {
           Block content = ack.getContent();
           content.parse();
@@ -74,11 +74,11 @@ main(int argc, char* argv[])
   // query for record
   scheduler.schedule(CHECKOUT_INTERVAL * 2, [&] {
    checker.doOwnerCheck(ledgerPrefix, ownerCert, 
-    [] (auto& i) {
+    [] (auto&&, auto& i) {
       // on valid, should be a nack data
       std::cout << i << std::endl;
     },
-    [] (auto& i) {
+    [] (auto&&, auto& i) {
       // on revoked, should be a record
       std::cout << i << std::endl;
     },
@@ -87,11 +87,11 @@ main(int argc, char* argv[])
     });
 
     checker.doIssuerCheck(ledgerPrefix, ownerCert, 
-    [] (auto& i) {
+    [] (auto&&, auto& i) {
       // on valid, should be a nack data
       std::cout << i << std::endl;
     },
-    [] (auto& i) {
+    [] (auto&&, auto& i) {
       // on revoked, should be a record
       std::cout << i << std::endl;
     },

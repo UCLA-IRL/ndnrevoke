@@ -3,7 +3,7 @@
 
 #include "storage/ct-storage.hpp"
 #include "append/handle.hpp"
-#include "append/ct-state.hpp"
+#include "append/ct.hpp"
 #include "ct-configuration.hpp"
 #include "nack.hpp"
 
@@ -54,7 +54,7 @@ NDNREVOKE_PUBLIC_WITH_TESTS_ELSE_PRIVATE:
   CtConfig m_config;
   ndn::KeyChain& m_keyChain;
   ndn::ValidatorConfig m_validator{m_face};
-  std::unique_ptr<append::CtState> m_ctState;
+  std::unique_ptr<append::Ct> m_appendCt;
   std::unique_ptr<CtStorage> m_storage;
 
   append::Handle m_handle;

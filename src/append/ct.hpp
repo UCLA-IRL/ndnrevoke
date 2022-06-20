@@ -1,7 +1,7 @@
-#ifndef NDNREVOKE_APPEND_HANDLE_CT_STATE_HPP
-#define NDNREVOKE_APPEND_HANDLE_CT_STATE_HPP
+#ifndef NDNREVOKE_APPEND_CT_HPP
+#define NDNREVOKE_APPEND_CT_HPP
 
-#include "append/options.hpp"
+#include "append/ct-options.hpp"
 #include "append/handle.hpp"
 
 namespace ndnrevoke::append {
@@ -9,12 +9,12 @@ using appendtlv::AppendStatus;
 
 using UpdateCallback = std::function<AppendStatus(const Data&)>;
 
-class CtState : boost::noncopyable
+class Ct : boost::noncopyable
 {
 public:
   explicit
-  CtState(const Name& prefix, const Name& topic, ndn::Face& face, 
-          ndn::KeyChain& keyChain, ndn::security::Validator& validator);
+  Ct(const Name& prefix, const Name& topic, ndn::Face& face, 
+     ndn::KeyChain& keyChain, ndn::security::Validator& validator);
 
   void
   listen(const UpdateCallback& onUpdateCallback);

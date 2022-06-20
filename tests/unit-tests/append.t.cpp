@@ -1,4 +1,4 @@
-#include "append/ct-state.hpp"
+#include "append/ct.hpp"
 #include "append/client.hpp"
 #include "test-common.hpp"
 #include <iostream>
@@ -28,8 +28,8 @@ BOOST_AUTO_TEST_CASE(AppendCtStateNotify)
   Name topic = Name(identity.getName()).append("append");
   validator.load("tests/unit-tests/config-files/trust-schema.conf");
 
-  CtState ctState(identity.getName(), topic, face, m_keyChain, validator);
-  ctState.listen(nullptr);
+  Ct ct(identity.getName(), topic, face, m_keyChain, validator);
+  ct.listen(nullptr);
   advanceClocks(time::milliseconds(20), 60);
 
   // better to separate into a specific encoder
@@ -57,8 +57,8 @@ BOOST_AUTO_TEST_CASE(AppendCtStateFetch)
   uint64_t nonce = ndn::random::generateSecureWord64();
   validator.load("tests/unit-tests/config-files/trust-schema.conf");
 
-  CtState ctState(identity.getName(), topic, face, m_keyChain, validator);
-  ctState.listen([cert2] (auto i) -> tlv::AppendStatus {
+  Ct ct(identity.getName(), topic, face, m_keyChain, validator);
+  ct.listen([cert2] (auto i) -> tlv::AppendStatus {
     BOOST_CHECK_EQUAL(i.getName(), cert2.getName());
     BOOST_CHECK_EQUAL(i.getContent().value_size(), cert2.getContent().value_size());
     return tlv::AppendStatus::SUCCESS;
@@ -95,21 +95,21 @@ BOOST_AUTO_TEST_CASE(AppendHandleClientCallback)
   Name topic = Name(identity.getName()).append("append");
   validator.load("tests/unit-tests/config-files/trust-schema.conf");
 
-  ClientState ClientState(identity2.getName(), face2, m_keyChain, validator);
+  Client Client(identity2.getName(), face2, m_keyChain, validator);
   Data appData("/ndn/site3/abc/appData");
   const std::string str("Hello, world!");
   appData.setContent(make_span<const uint8_t>(reinterpret_cast<const uint8_t*>(str.data()), str.size()));
   m_keyChain.sign(appData, ndn::signingByIdentity(identity2));
 
-  CtState ctState(identity.getName(), topic, face, m_keyChain, validator);
-  ctState.listen([appData] (auto i) -> tlv::AppendStatus {
+  Ct ct(identity.getName(), topic, face, m_keyChain, validator);
+  ct.listen([appData] (auto i) -> tlv::AppendStatus {
     BOOST_CHECK_EQUAL(i.getName(), appData.getName());
     BOOST_CHECK_EQUAL(i.getContent().value_size(), appData.getContent().value_size());
     return tlv::AppendStatus::SUCCESS;
   });
   advanceClocks(time::milliseconds(20), 60);
 
-  uint64_t nonce = ClientState.appendData(topic, {appData}, 
+  uint64_t nonce = Client.appendData(topic, {appData}, 
     [] (auto&&, auto& i) {
       Block content = i.getContent();
       content.parse();

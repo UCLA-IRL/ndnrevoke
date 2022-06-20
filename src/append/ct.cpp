@@ -1,14 +1,11 @@
-#include "append/ct-state.hpp"
+#include "append/ct.hpp"
 #include <ndn-cxx/security/signing-helpers.hpp>
 
 namespace ndnrevoke::append {
 NDN_LOG_INIT(ndnrevoke.append);
 
-
-const ssize_t CT_MAX_RETRIES = 5;
-
-CtState::CtState(const Name& prefix, const Name& topic, ndn::Face& face, 
-                 ndn::KeyChain& keyChain, ndn::security::Validator& validator)
+Ct::Ct(const Name& prefix, const Name& topic, ndn::Face& face, 
+       ndn::KeyChain& keyChain, ndn::security::Validator& validator)
   : m_prefix(prefix)
   , m_face(face)
   , m_topic(topic)
@@ -18,11 +15,11 @@ CtState::CtState(const Name& prefix, const Name& topic, ndn::Face& face,
 }
 
 void
-CtState::serveClient(std::shared_ptr<ClientOptions> client)
+Ct::serveClient(std::shared_ptr<ClientOptions> client)
 {
   auto fetcher =  m_options.makeFetcher(*client);
-  if (m_retryCount++ > CT_MAX_RETRIES) {
-    NDN_LOG_ERROR("Interest " << *fetcher << " run out of " << CT_MAX_RETRIES << " retries");
+  if (client->exhaustRetries()) {
+    NDN_LOG_ERROR("Interest " << *fetcher << " run out of retries");
     // acking notification
     auto ack = m_options.makeNotificationAck(*client, {AppendStatus::FAILURE_TIMEOUT});
     m_keyChain.sign(*ack, ndn::signingByIdentity(m_prefix));
@@ -60,7 +57,7 @@ CtState::serveClient(std::shared_ptr<ClientOptions> client)
 }
 
 void
-CtState::listen(const UpdateCallback& onUpdateCallback)
+Ct::listen(const UpdateCallback& onUpdateCallback)
 {
   if (m_topic.empty()) {
     NDN_LOG_TRACE("No topic to listen, return\n");
@@ -80,7 +77,7 @@ CtState::listen(const UpdateCallback& onUpdateCallback)
 }
 
 void
-CtState::onValidationSuccess(const Data& data, std::shared_ptr<ClientOptions> client)
+Ct::onValidationSuccess(const Data& data, std::shared_ptr<ClientOptions> client)
 {
   auto content = data.getContent();
 
@@ -114,7 +111,7 @@ CtState::onValidationSuccess(const Data& data, std::shared_ptr<ClientOptions> cl
 }
 
 void
-CtState::onValidationFailure(const Data& data, const ndn::security::ValidationError& error,
+Ct::onValidationFailure(const Data& data, const ndn::security::ValidationError& error,
                               std::shared_ptr<ClientOptions> client)
 {
   // acking notification

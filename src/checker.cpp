@@ -5,10 +5,10 @@ namespace ndnrevoke::checker {
 
 NDN_LOG_INIT(ndnrevoke.checker);
 
-Checker::Checker(ndn::Face& face, std::string schemaFile)
+Checker::Checker(ndn::Face& face, ndn::security::Validator& validator)
   : m_face(face)
+  , m_validator(validator)
 {
-  m_validator.load(schemaFile);
 }
 
 void
@@ -32,154 +32,62 @@ Checker::doOwnerCheck(const Name ledgerPrefix, const Certificate& certData,
 }
 
 void
-Checker::doCheck(const Name ledgerPrefix, const Certificate& certData, const Name::Component& publisher,
+Checker::doCheck(const Name ledgerPrefix, const Certificate& certData, const Name::Component& revoker,
                  const onValidCallback onValid, 
                  const onRevokedCallback onRevoked, 
                  const onFailureCallback onFailure)
 {
-  auto recordName = certData.getName();
-  recordName.set(certData.getIdentity().size(), Name::Component("REVOKE"));
-  recordName.append(publisher);
-  Interest interest(recordName);
-  interest.setMustBeFresh(true);
-  interest.setCanBePrefix(true);
-  interest.setForwardingHint({ledgerPrefix});
-
-  CheckerCbs cbs;
-  cbs.cert = certData;
-  cbs.vCb = onValid;
-  cbs.rCb = onRevoked;
-  cbs.fCb = onFailure;
-  try {
-    m_states.insert(std::make_pair(recordName, cbs));
-    NDN_LOG_TRACE("checking: " << recordName);
-  }
-  catch (std::exception& e) {
-    NDN_LOG_ERROR("Cannot set checker state");
-  }
-  m_face.expressInterest(interest,
-                         std::bind(&Checker::onData, this, _1, _2),
-                         std::bind(&Checker::onNack, this, _1, _2),
-                         std::bind(&Checker::onTimeout, this, _1));
+  auto state = std::make_shared<CheckerOptions>(m_face, certData, onValid, onRevoked, onFailure);
+  dispatchInterest(state, revoker);
 }
 
 void
-Checker::onData(const Interest&, const Data& data)
+Checker::dispatchInterest(const std::shared_ptr<CheckerOptions>& checkerOptions,
+                          const Name::Component& revoker)
 {
-  m_validator.validate(data,
-                       [this, data] (const Data&) {
-                         NDN_LOG_DEBUG("Data conforms to trust schema");
-                         onValidationSuccess(data);
-                       },
-                       [this, data] (const Data&, const ndn::security::ValidationError& error) {
-                         NDN_LOG_ERROR("Error authenticating data: " << error);
-                         onValidationFailure(data, error);
-                       });
+  if (checkerOptions->exhaustRetries()) {
+    return checkerOptions->onFailure(Error(Error::Code::TIMEOUT, "Running out of retries"));
+  }
+
+  m_face.expressInterest(*checkerOptions->makeInterest(revoker),
+    [this, checkerOptions] (auto&&, auto& data) {
+      // naming conventiion check
+      m_validator.validate(data,
+        [this, checkerOptions, data] (const Data&) {
+          NDN_LOG_DEBUG("Data conforms to trust schema");
+          return onValidationSuccess(checkerOptions, data);
+        },
+        [this, checkerOptions, data] (const Data&, const ndn::security::ValidationError& error) {
+          NDN_LOG_ERROR("Error authenticating data: " << error);
+          return onValidationFailure(checkerOptions, error);
+        }
+      );
+    },
+    [checkerOptions] (auto& i, auto&&) {
+      return checkerOptions->onFailure(Error(Error::Code::NACK, i.getName().toUri()));
+    },
+    [this, checkerOptions, revoker] (const auto&) { return dispatchInterest(checkerOptions, revoker);}
+  );
 }
 
 void
-Checker::onValidationSuccess(const Data& data)
+Checker::onValidationSuccess(const std::shared_ptr<CheckerOptions>& checkerOptions, const Data& data)
 {
-  // it this a record?
   Name dataName = data.getName();
-  NDN_LOG_TRACE("Handling Validation Success: " << dataName);
-  Name certName;
   if (record::Record::isValidName(dataName)) {
-    auto iter = m_states.find(data.getName());
-    if (iter == m_states.end()) {
-      NDN_LOG_ERROR("Cannot get checker state");
-      return;
-    }
-    iter->second.rCb(record::Record(data));
-    m_states.erase(iter);
-    return;
+    return checkerOptions->onRevoked(record::Record(data));
   }
-
-  // is this a nack?
   if (nack::RecordNack::isValidName(dataName)) {
-    nack::RecordNack nack(data);
-    auto iter = m_states.find(nack.getRecordName());
-    if (iter == m_states.end()) {
-      NDN_LOG_ERROR("Cannot get checker state");
-      return;
-    }
-    iter->second.vCb(nack);
-    m_states.erase(iter);
-    return;
-  }
-}
-
-void
-Checker::onValidationFailure(const Data& data, const ndn::security::ValidationError& error)
-{
-  // it this a record?
-  Name dataName = data.getName();
-  NDN_LOG_TRACE("Handling Validation Failure: " << dataName);
-  Name certName;
-  if (record::Record::isValidName(dataName)) {
-    auto iter = m_states.find(data.getName());
-    if (iter == m_states.end()) {
-      iter->second.fCb(iter->second.cert, 
-                       Error(Error::Code::IMPLEMENTATION_ERROR, "Cannot get checker state"));
-      return;
-    }
-    iter->second.fCb(iter->second.cert, Error(Error::Code::VALIDATION_ERROR, error.getInfo()));
-    m_states.erase(iter);
-    return;
-  }
-
-  // is this a nack?
-  if (nack::RecordNack::isValidName(dataName)) {
-    auto iter = m_states.find(nack::RecordNack(data).getRecordName());
-    if (iter == m_states.end()) {
-      iter->second.fCb(iter->second.cert, 
-                       Error(Error::Code::IMPLEMENTATION_ERROR, "Cannot get checker state"));
-      return;
-    }
-    iter->second.fCb(iter->second.cert, Error(Error::Code::VALIDATION_ERROR, error.getInfo()));
-    m_states.erase(iter);
-    return;
-  }
-}
-
-void
-Checker::onNack(const Interest& interest, const ndn::lp::Nack& nack)
-{
-  auto iter = m_states.find(interest.getName());
-  if (iter == m_states.end()) {
-    NDN_LOG_ERROR("Cannot get checker state");
-  }
-  NDN_LOG_ERROR("Interest " << interest << " nack:" << nack.getReason());
-  iter->second.fCb(iter->second.cert, 
-                   Error(Error::Code::NACK, interest.getName().toUri()));
-  m_states.erase(iter);
-}
-
-void
-Checker::onTimeout(const Interest& interest)
-{
-  auto iter = m_states.find(interest.getName());
-  if (iter == m_states.end()) {
-    NDN_LOG_ERROR("Cannot get checker state");
-    return;
-  }
-  if (iter->second.remainingRetry-- > 0) {
-    NDN_LOG_DEBUG("Retrying Interest " << interest <<
-                  ", remaining retries " << iter->second.remainingRetry);
-    
-    Interest retry(interest);
-    retry.refreshNonce();
-    m_face.expressInterest(retry,
-                           std::bind(&Checker::onData, this, _1, _2),
-                           std::bind(&Checker::onNack, this, _1, _2),
-                           std::bind(&Checker::onTimeout, this, _1));    
+    return checkerOptions->onValid(nack::RecordNack(data));
   }
   else {
-    NDN_LOG_ERROR("Interest " << interest << " timeout");
-    iter->second.fCb(iter->second.cert, 
-                     Error(Error::Code::TIMEOUT, interest.getName().toUri()));
-    m_states.erase(iter);
+    return checkerOptions->onFailure(Error(Error::Code::PROTO_SPECIFIC, "Uncognized data format")); 
   }
 }
 
+void
+Checker::onValidationFailure(const std::shared_ptr<CheckerOptions>& checkerOptions, const ndn::security::ValidationError& error)
+{
+  return checkerOptions->onFailure(Error(Error::Code::VALIDATION_ERROR, error.getInfo()));
+}
 } // namespace ndnrevoke

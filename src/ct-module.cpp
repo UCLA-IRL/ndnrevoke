@@ -23,8 +23,8 @@ CtModule::CtModule(ndn::Face& face, ndn::KeyChain& keyChain, const std::string& 
   registerPrefix();
   
   Name topic = Name(m_config.ctPrefix).append("LEDGER").append("append");
-  m_ctState = std::make_unique<append::CtState>(m_config.ctPrefix, topic, m_face, m_keyChain, m_validator);
-  m_ctState->listen(std::bind(&CtModule::onDataSubmission, this, _1));
+  m_appendCt = std::make_unique<append::Ct>(m_config.ctPrefix, topic, m_face, m_keyChain, m_validator);
+  m_appendCt->listen(std::bind(&CtModule::onDataSubmission, this, _1));
 }
 
 void
