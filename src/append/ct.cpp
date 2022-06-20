@@ -87,27 +87,27 @@ Ct::onValidationSuccess(const Data& data, std::shared_ptr<ClientOptions> client)
   ssize_t count = 0;
   AppendStatus statusCode;
   for (const auto &it : content.elements()) {
-      switch (it.type()) {
+    switch (it.type()) {
       case ndn::tlv::Data:
-          count++;
-          statusCode = m_onUpdate(Data(it));
-          statusList.push_back(statusCode);
-          break;
+        count++;
+        statusCode = m_onUpdate(Data(it));
+        statusList.push_back(statusCode);
+        break;
       default:
-          if (ndn::tlv::isCriticalType(it.type())) {
-            NDN_THROW(std::runtime_error("Unrecognized TLV Type: " + std::to_string(it.type())));
-          }
-          else {
-            //ignore
-          }
-          break;
-      }
-    // acking notification
-    auto ack = m_options.makeNotificationAck(*client, statusList);
-    m_keyChain.sign(*ack, ndn::signingByIdentity(m_prefix));
-    m_face.put(*ack);
-    NDN_LOG_TRACE("Putting notification ack");
+        if (ndn::tlv::isCriticalType(it.type())) {
+          NDN_THROW(std::runtime_error("Unrecognized TLV Type: " + std::to_string(it.type())));
+        }
+        else {
+          //ignore
+        }
+        break;
+    }
   }
+  // acking notification
+  auto ack = m_options.makeNotificationAck(*client, statusList);
+  m_keyChain.sign(*ack, ndn::signingByIdentity(m_prefix));
+  m_face.put(*ack);
+  NDN_LOG_TRACE("Putting notification ack");
 }
 
 void

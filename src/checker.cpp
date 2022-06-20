@@ -38,18 +38,18 @@ Checker::doCheck(const Name ledgerPrefix, const Certificate& certData, const Nam
                  const onFailureCallback onFailure)
 {
   auto state = std::make_shared<CheckerOptions>(m_face, certData, onValid, onRevoked, onFailure);
-  dispatchInterest(state, revoker);
+  dispatchInterest(state, ledgerPrefix, revoker);
 }
 
 void
 Checker::dispatchInterest(const std::shared_ptr<CheckerOptions>& checkerOptions,
-                          const Name::Component& revoker)
+                          const Name& ledgerPrefix, const Name::Component& revoker)
 {
   if (checkerOptions->exhaustRetries()) {
     return checkerOptions->onFailure(Error(Error::Code::TIMEOUT, "Running out of retries"));
   }
 
-  m_face.expressInterest(*checkerOptions->makeInterest(revoker),
+  m_face.expressInterest(*checkerOptions->makeInterest(ledgerPrefix, revoker),
     [this, checkerOptions] (auto&&, auto& data) {
       // naming conventiion check
       m_validator.validate(data,
@@ -66,7 +66,9 @@ Checker::dispatchInterest(const std::shared_ptr<CheckerOptions>& checkerOptions,
     [checkerOptions] (auto& i, auto&&) {
       return checkerOptions->onFailure(Error(Error::Code::NACK, i.getName().toUri()));
     },
-    [this, checkerOptions, revoker] (const auto&) { return dispatchInterest(checkerOptions, revoker);}
+    [this, checkerOptions, ledgerPrefix, revoker] (const auto&) {
+       return dispatchInterest(checkerOptions, ledgerPrefix, revoker);
+    }
   );
 }
 

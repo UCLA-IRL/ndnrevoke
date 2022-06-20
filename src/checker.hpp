@@ -38,7 +38,7 @@ public:
 private:
   void
   dispatchInterest(const std::shared_ptr<CheckerOptions>& checkerOptions,
-                   const Name::Component& revoker);
+                   const Name& ledgerPrefix, const Name::Component& revoker);
   void
   onValidationSuccess(const std::shared_ptr<CheckerOptions>& checkerOptions, const Data& data);
 

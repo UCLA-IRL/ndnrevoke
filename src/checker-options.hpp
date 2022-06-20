@@ -27,7 +27,7 @@ public:
                  const onFailureCallback onFailure);
   
   std::shared_ptr<Interest>
-  makeInterest(const Name::Component& revoker);
+  makeInterest(const Name& ledgerPrefix, const Name::Component& revoker);
 
   bool
   exhaustRetries()
@@ -72,7 +72,6 @@ private:
 
   ndn::Face& m_face;
 
-  Name m_ledgerPrefix;
   Certificate m_cert;
   onValidCallback m_vCb;
   onRevokedCallback m_rCb;
