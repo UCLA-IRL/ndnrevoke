@@ -47,7 +47,7 @@ ClientState::dispatchNotification(const std::shared_ptr<ClientOptions>& options,
           onValidationFailure(options, data, error);
         });
     }, 
-    [this, options, data] (const auto& i, auto& n) {
+    [options, data] (const auto& i, auto& n) {
       NDN_LOG_ERROR("Notification Nack: " << n.getReason()); 
       options->onFailure(data, Error(Error::Code::NACK, i.getName().toUri()));
     },
@@ -99,6 +99,7 @@ ClientState::onValidationSuccess(const std::shared_ptr<ClientOptions>& options, 
       NDN_LOG_TRACE("There are individual submissions failed by CT");
     }
   }
+  m_retryCount = 0;
   options->onSuccess(data, ack);
 }
 
