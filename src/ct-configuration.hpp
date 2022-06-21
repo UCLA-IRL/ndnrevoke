@@ -1,6 +1,8 @@
 #ifndef NDNREVOKE_CT_CONFIGURATION_HPP
 #define NDNREVOKE_CT_CONFIGURATION_HPP
 
+#define NDNREVOKE_SYSCONFDIR "/usr/local/etc"
+
 #include "revocation-common.hpp"
 
 namespace ndnrevoke::ct {

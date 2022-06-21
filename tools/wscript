@@ -1,0 +1,22 @@
+# -*- Mode: python; py-indent-offset: 4; indent-tabs-mode: nil; coding: utf-8; -*-
+
+top = '..'
+
+def build(bld):
+    bld.program(
+        name='ndnrevoke-revoker',
+        target='../bin/ndnrevoke-revoker',
+        source='ndnrevoke-revoker.cpp',
+        use='ndn-revoke')
+
+    bld.program(
+        name='ndnrevoke-checker',
+        target='../bin/ndnrevoke-checker',
+        source='ndnrevoke-checker.cpp',
+        use='ndn-revoke')
+
+    bld.program(
+        name='ndnrevoke-ct',
+        target='../bin/ndnrevoke-ct',
+        source='ndnrevoke-ct.cpp',
+        use='ndn-revoke')

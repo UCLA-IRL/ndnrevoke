@@ -46,7 +46,8 @@ CtModule::registerPrefix()
         m_handle.handleFilter(filterId);
       }
     },
-    [this] (auto&&, const auto& reason) { onRegisterFailed(reason); });
+    [this] (auto&&, const auto& reason) { onRegisterFailed(reason); }
+  );
   m_handle.handlePrefix(prefixId);
 }
 

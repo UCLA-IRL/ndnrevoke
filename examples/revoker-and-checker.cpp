@@ -32,7 +32,6 @@ main(int argc, char* argv[])
   // init append client for revoker and callbacks for checker
 
   ndn::ValidatorConfig validator{face};
-  Name topic = Name(ownerId.getName()).append("append");
   validator.load("trust-schema.conf");
 
   append::Client client(ownerId.getName(), face, keyChain, validator);
@@ -46,7 +45,8 @@ main(int argc, char* argv[])
       std::cerr << "ERROR: Failed to register prefix '" << prefix
       << "' with the local forwarder (" << reason << ")\n";
       face.shutdown();
-    });
+    }
+  );
 
   // scheduled record appending after prefix registeration
   scheduler.schedule(CHECKOUT_INTERVAL, [&] {
@@ -56,16 +56,16 @@ main(int argc, char* argv[])
     Name appendPrefix = Name(ledgerPrefix).append("append");
     client.appendData(appendPrefix, {*ownerRecord, *issuerRecord},
       [&] (auto&&, auto& ack) {
-          Block content = ack.getContent();
-          content.parse();
-          for (auto elem : content.elements()) {
-            uint64_t status = readNonNegativeInteger(elem);
-            std::cout << "Append status: " << appendtlv::statusToString(static_cast<appendtlv::AppendStatus>(status))
-                      << std::endl;
-          }
+        Block content = ack.getContent();
+        content.parse();
+        for (auto elem : content.elements()) {
+          uint64_t status = readNonNegativeInteger(elem);
+          std::cout << "Append status: " << appendtlv::statusToString(static_cast<appendtlv::AppendStatus>(status))
+                    << std::endl;
+        }
       },
       [] (auto&&, auto& error) {
-          std::cout << error << std::endl;
+        std::cout << error << std::endl;
       }
     );
    }

@@ -96,6 +96,8 @@ private:
 
 std::string reasonToString(tlv::ReasonCode reason);
 
+tlv::ReasonCode stringToReason(std::string reason);
+
 std::ostream&
 operator<<(std::ostream& os, const Record& record);
 } // namespace ndnrevoke::record

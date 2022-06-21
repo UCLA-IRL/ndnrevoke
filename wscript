@@ -83,6 +83,7 @@ def build(bld):
         install_path='${LIBDIR}/pkgconfig',
         VERSION=VERSION)
 
+    bld.recurse('tools')
     bld.recurse('tests')
     if bld.env.WITH_EXAMPLES:
         bld.recurse('examples')
@@ -95,3 +96,6 @@ def build(bld):
 
     bld.install_files('${INCLUDEDIR}/ndnrevoke',
                       bld.path.find_resource('src/ndnrevoke-config.hpp'))
+    
+    bld.install_files('${SYSCONFDIR}/ndnrevoke',
+                      ['ct.config.sample'])

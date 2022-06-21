@@ -144,6 +144,25 @@ std::string reasonToString(tlv::ReasonCode reason)
   }
 }
 
+tlv::ReasonCode stringToReason(std::string reason)
+{
+  if (reason == "UNSPECIFIED") {
+    return tlv::ReasonCode::UNSPECIFIED;
+  }
+  else if (reason == "KEY_COMPROMISE") {
+    return tlv::ReasonCode::KEY_COMPROMISE;
+  }
+  else if (reason == "CA_COMPROMISE") {
+    return tlv::ReasonCode::CA_COMPROMISE;
+  }
+  else if (reason == "SUPERSEDED") {
+    return tlv::ReasonCode::SUPERSEDED;
+  }
+  else {
+    return tlv::ReasonCode::INVALID;
+  }
+}
+
 std::ostream&
 operator<<(std::ostream& os, const Record& record)
 {
